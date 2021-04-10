@@ -1,0 +1,25 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "net.himeki.mcmtfabric.mixin",
+  "compatibilityLevel": "JAVA_8",
+  "mixins": [
+    "LevelPropagatorMixin",
+    "MinecraftServerMixin",
+    "PalettedContainerMixin",
+    "SerializingRegionBasedStorageMixin",
+    "ServerChunkManagerMixin",
+    "ServerPlayerEntityMixin",
+    "ServerTickSchedulerMixin",
+    "TypeFilterableListMixin",
+    "UtilMixin",
+    "WorldMixin"
+  ],
+  "client": [
+    "ServerWorldMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  },
+  "plugin": "net.himeki.mcmtfabric.mixin.SynchronisePlugin"
+}

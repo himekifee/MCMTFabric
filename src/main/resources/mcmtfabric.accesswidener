@@ -1,0 +1,4 @@
+accessWidener	v1	named
+Accessible field net/minecraft/server/world/ServerChunkManager mainThreadExecutor Lnet/minecraft/server/world/ServerChunkManager$MainThreadExecutor;
+#Accessible field net/minecraft/server/world/ServerWorld entityNavigations Lnet/minecraft/server/world/ServerWorld;entityNavigations:Ljava/util/Set;
+Accessible method net/minecraft/server/world/ServerWorld processBlockEvent (Lnet/minecraft/server/world/BlockEvent;)Z
