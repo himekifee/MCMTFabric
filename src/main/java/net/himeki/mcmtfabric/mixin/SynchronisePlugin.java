@@ -2,7 +2,6 @@ package net.himeki.mcmtfabric.mixin;
 
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
-import net.devtech.grossfabrichacks.transformer.asm.AsmClassTransformer;
 import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.loader.api.MappingResolver;
 import org.apache.logging.log4j.LogManager;
@@ -69,7 +68,7 @@ public class SynchronisePlugin implements IMixinConfigPlugin {
                         syncLogger.info("Setting synchronise bit for " + method.name + " in " + targetClassName + ".");
                     }
             }
-        else if (mixinClassName.contains("Int2ObjectOpenHashMap")) {
+        else if (mixinClassName.equals("net.himeki.mcmtfabric.mixin.fastutil.Int2ObjectOpenHashMapMixin") || mixinClassName.equals("net.himeki.mcmtfabric.mixin.fastutil.Long2ObjectOpenHashMapMixin") || mixinClassName.equals("net.himeki.mcmtfabric.mixin.fastutil.LongLinkedOpenHashSetMixin")) {
             int posFilter = Opcodes.ACC_PUBLIC;
             int negFilter = Opcodes.ACC_STATIC | Opcodes.ACC_SYNTHETIC | Opcodes.ACC_NATIVE | Opcodes.ACC_ABSTRACT | Opcodes.ACC_BRIDGE;
 
