@@ -13,7 +13,10 @@
     "ServerTickSchedulerMixin",
     "TypeFilterableListMixin",
     "UtilMixin",
-    "WorldMixin"
+    "WorldMixin",
+    "fastutil.Int2ObjectOpenHashMapMixin",
+    "fastutil.Long2ObjectOpenHashMapMixin",
+    "fastutil.LongLinkedOpenHashSetMixin"
   ],
   "client": [
     "ServerWorldMixin"

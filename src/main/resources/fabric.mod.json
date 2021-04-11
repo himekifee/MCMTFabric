@@ -2,7 +2,6 @@
   "schemaVersion": 1,
   "id": "mcmtfabric",
   "version": "${version}",
-
   "name": "MCMTFabric",
   "description": "A fabric port of MCMT.",
   "authors": [
@@ -12,21 +11,21 @@
     "homepage": "",
     "sources": "https://github.com/himekifee/MCMTFabric"
   },
-
   "license": "GPLv3",
   "icon": "assets/mcmtfabric/mcmt.png",
-
   "environment": "*",
   "entrypoints": {
+    "gfh:prePreLaunch": [
+      "net.himeki.mcmtfabric.syncfu.SyncFuTransformer"
+    ],
     "main": [
       "net.himeki.mcmtfabric.MCMT"
     ]
   },
-  "accessWidener" : "mcmtfabric.accesswidener",
+  "accessWidener": "mcmtfabric.accesswidener",
   "mixins": [
     "mcmtfabric.mixins.json"
   ],
-
   "depends": {
     "fabricloader": ">=0.7.4",
     "minecraft": "1.16.x"

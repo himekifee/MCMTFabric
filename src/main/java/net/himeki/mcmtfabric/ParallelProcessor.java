@@ -6,7 +6,6 @@ import net.himeki.mcmtfabric.parallelised.RunnableManagedBlocker;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.block.entity.PistonBlockEntity;
 import net.minecraft.entity.Entity;
-import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.network.packet.s2c.play.BlockEventS2CPacket;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.world.BlockEvent;
