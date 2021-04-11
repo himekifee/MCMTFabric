@@ -36,16 +36,14 @@ public class ParallelProcessor {
     static AtomicInteger threadID = new AtomicInteger();
 
     public static void setupThreadPool(int parallelism) {
-        threadID = new AtomicInteger();
-        ForkJoinPool.ForkJoinWorkerThreadFactory fjpf = p -> {
-            ForkJoinWorkerThread fjwt = ForkJoinPool.defaultForkJoinWorkerThreadFactory.newThread(p);
-            fjwt.setName("MCMT-Pool-Thread-" + threadID.getAndIncrement());
-            return fjwt;
-        };
-        ex = new ForkJoinPool(
-                parallelism,
-                fjpf,
-                null, true);
+//        threadID = new AtomicInteger();
+//        ForkJoinPool.ForkJoinWorkerThreadFactory fjpf = p -> {
+//            ForkJoinWorkerThread fjwt = ForkJoinPool.defaultForkJoinWorkerThreadFactory.newThread(p);
+//            fjwt.setName("MCMT-Pool-Thread-" + threadID.getAndIncrement());
+//            return fjwt;
+//        };
+//        ex = new ForkJoinPool(parallelism, fjpf, null, true);
+        ex = Executors.newWorkStealingPool(parallelism);
     }
 
     /**
