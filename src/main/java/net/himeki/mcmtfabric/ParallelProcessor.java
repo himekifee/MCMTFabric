@@ -36,14 +36,13 @@ public class ParallelProcessor {
     static AtomicInteger threadID = new AtomicInteger();
 
     public static void setupThreadPool(int parallelism) {
-//        threadID = new AtomicInteger();
-//        ForkJoinPool.ForkJoinWorkerThreadFactory fjpf = p -> {
-//            ForkJoinWorkerThread fjwt = ForkJoinPool.defaultForkJoinWorkerThreadFactory.newThread(p);
-//            fjwt.setName("MCMT-Pool-Thread-" + threadID.getAndIncrement());
-//            return fjwt;
-//        };
-//        ex = new ForkJoinPool(parallelism, fjpf, null, true);
-        ex = Executors.newWorkStealingPool(parallelism);
+        threadID = new AtomicInteger();
+        ForkJoinPool.ForkJoinWorkerThreadFactory fjpf = p -> {
+            ForkJoinWorkerThread fjwt = ForkJoinPool.defaultForkJoinWorkerThreadFactory.newThread(p);
+            fjwt.setName("MCMT-Pool-Thread-" + threadID.getAndIncrement());
+            return fjwt;
+        };
+        ex = new ForkJoinPool(parallelism, fjpf, null, true);
     }
 
     /**
@@ -51,7 +50,7 @@ public class ParallelProcessor {
      */
     static {
         // Must be static here due to class loading shenanagins
-        setupThreadPool(4);
+        setupThreadPool(16);
     }
 
     static Map<String, Set<Thread>> mcThreadTracker = new ConcurrentHashMap<String, Set<Thread>>();
