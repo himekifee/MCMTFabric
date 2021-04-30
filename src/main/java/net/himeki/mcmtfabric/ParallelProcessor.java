@@ -174,7 +174,7 @@ public class ParallelProcessor {
             isLocking = true;
         }
         // Apparently a string starts with check is faster than Class.getPackage; who knew (I didn't)
-        if (!isLocking && GeneralConfig.chunkLockModded && !tte.getClass().getName().startsWith("net.minecraft.tileentity.")) {
+        if (!isLocking && GeneralConfig.chunkLockModded && !tte.getClass().getName().startsWith("net.minecraft.block.entity")) {
             isLocking = true;
         }
         if (isLocking && GeneralConfig.teWhiteList.contains(tte.getClass())) {
