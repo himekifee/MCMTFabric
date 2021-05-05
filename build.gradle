@@ -1,5 +1,6 @@
 plugins {
     id 'fabric-loom' version '0.6-SNAPSHOT'
+    id 'com.github.johnrengelman.shadow' version '7.0.0'
     id 'maven-publish'
 }
 
@@ -36,6 +37,7 @@ dependencies {
     modImplementation group: 'net.devtech', name: 'grossfabrichacks', version: '6.1'
     implementation group: 'com.google.code.findbugs', name: 'jsr305', version: '3.0.2'
 
+    include group: 'net.devtech', name: 'grossfabrichacks', version: '6.1'
 }
 
 processResources {
