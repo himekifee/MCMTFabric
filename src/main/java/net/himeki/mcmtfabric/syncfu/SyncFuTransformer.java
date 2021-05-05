@@ -18,6 +18,7 @@ public class SyncFuTransformer implements PrePreLaunch {
 
     @Override
     public void onPrePreLaunch() {
+        syncFuTransformerLogger.info("On SyncFuTransformer PrePreLaunch...");
 
         Optional<URL> fuJarUrl = Arrays.stream(System.getProperty("java.class.path").split(File.pathSeparator)).flatMap(path -> {
             File file = new File(path);
