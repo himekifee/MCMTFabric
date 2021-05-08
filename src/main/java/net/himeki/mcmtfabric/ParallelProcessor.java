@@ -224,7 +224,7 @@ public class ParallelProcessor {
         });
     }
 
-    public static <T> void fixSTL(ServerTickScheduler<T> stl, ConcurrentSkipListSet<ScheduledTick<T>> scheduledTickActionsInOrder, Set<ScheduledTick<T>> scheduledTickActions) {
+    public static <T> void fixSTL(ServerTickScheduler<T> stl, TreeSet<ScheduledTick<T>> scheduledTickActionsInOrder, Set<ScheduledTick<T>> scheduledTickActions) {
         LOGGER.debug("FixSTL Called");
         scheduledTickActionsInOrder.addAll(scheduledTickActions);
     }
