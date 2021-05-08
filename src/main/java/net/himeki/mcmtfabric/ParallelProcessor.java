@@ -50,7 +50,8 @@ public class ParallelProcessor {
      */
     static {
         // Must be static here due to class loading shenanagins
-        setupThreadPool(16);
+        setupThreadPool(Runtime.getRuntime().availableProcessors());
+//        setupThreadPool(4);
     }
 
     static Map<String, Set<Thread>> mcThreadTracker = new ConcurrentHashMap<String, Set<Thread>>();
