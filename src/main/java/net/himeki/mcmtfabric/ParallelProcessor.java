@@ -50,7 +50,9 @@ public class ParallelProcessor {
      */
     static {
         // Must be static here due to class loading shenanagins
-        setupThreadPool(Runtime.getRuntime().availableProcessors());
+        int threads = Runtime.getRuntime().availableProcessors() - 2;
+        setupThreadPool(threads);
+        LOGGER.info("Running MCMT-Pool with " + threads + " threads");
 //        setupThreadPool(4);
     }
 
