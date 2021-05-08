@@ -11,6 +11,7 @@
     "ServerChunkManagerMixin",
     "ServerPlayerEntityMixin",
     "ServerTickSchedulerMixin",
+    "ServerWorldMixin",
     "SharedConstantsMixin",
     "TypeFilterableListMixin",
     "UtilMixin",
@@ -20,7 +21,8 @@
     "fastutil.LongLinkedOpenHashSetMixin"
   ],
   "client": [
-    "ServerWorldMixin"
+  ],
+  "server": [
   ],
   "injectors": {
     "defaultRequire": 1

@@ -65,7 +65,7 @@ public class SynchronisePlugin implements IMixinConfigPlugin {
                 for (String targetMethod : targetMethods)
                     if (method.name.equals(targetMethod)) {
                         method.access |= Opcodes.ACC_SYNCHRONIZED;
-                        syncLogger.info("Setting synchronise bit for " + method.name + " in " + targetClassName + ".");
+                        syncLogger.info("Setting synchronize bit for " + method.name + " in " + targetClassName + ".");
                     }
             }
         else if (mixinClassName.equals("net.himeki.mcmtfabric.mixin.fastutil.Int2ObjectOpenHashMapMixin") || mixinClassName.equals("net.himeki.mcmtfabric.mixin.fastutil.Long2ObjectOpenHashMapMixin") || mixinClassName.equals("net.himeki.mcmtfabric.mixin.fastutil.LongLinkedOpenHashSetMixin")) {
