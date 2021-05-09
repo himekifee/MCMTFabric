@@ -201,16 +201,14 @@ public class ParallelProcessor {
             try {
                 final boolean doLock = filterTE(tte);
                 if (doLock) {
-                    ForkJoinPool.managedBlock(new RunnableManagedBlocker(() -> {
-                        BlockPos bp = ((BlockEntity) tte).getPos();
-                        long[] locks = ChunkLock.lock(bp, 1);
-                        try {
-                            currentTEs.incrementAndGet();
-                            tte.tick();
-                        } finally {
-                            ChunkLock.unlock(locks);
-                        }
-                    }));
+                    BlockPos bp = ((BlockEntity) tte).getPos();
+                    long[] locks = ChunkLock.lock(bp, 1);
+                    try {
+                        currentTEs.incrementAndGet();
+                        tte.tick();
+                    } finally {
+                        ChunkLock.unlock(locks);
+                    }
                 } else {
                     currentTEs.incrementAndGet();
                     tte.tick();
