@@ -8,6 +8,7 @@ import net.minecraft.world.chunk.light.LevelPropagator;
 import org.objectweb.asm.Opcodes;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Mutable;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -20,7 +21,9 @@ public abstract class LevelPropagatorMixin {
     @Final
     private Long2ByteMap pendingUpdates = new Long2ByteConcurrentHashMap();
 
-    @Shadow private LongLinkedOpenHashSet[] pendingIdUpdatesByLevel;
+    @Shadow
+    @Mutable
+    private LongLinkedOpenHashSet[] pendingIdUpdatesByLevel;
 
 
     @Inject(method = "<init>", at = @At(value = "FIELD", target = "Lnet/minecraft/world/chunk/light/LevelPropagator;pendingIdUpdatesByLevel:[Lit/unimi/dsi/fastutil/longs/LongLinkedOpenHashSet;", opcode = Opcodes.PUTFIELD, shift = At.Shift.AFTER))

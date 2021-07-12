@@ -14,12 +14,11 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.Set;
-import java.util.TreeSet;
 
 @Mixin(ServerTickScheduler.class)
 public abstract class ServerTickSchedulerMixin<T> implements TickScheduler<T> {
     @Shadow
-    TreeSet<ScheduledTick<T>> scheduledTickActionsInOrder;
+    Set<ScheduledTick<T>> scheduledTickActionsInOrder;
 
     @Shadow
     @Final
@@ -30,7 +29,7 @@ public abstract class ServerTickSchedulerMixin<T> implements TickScheduler<T> {
         return this.scheduledTickActionsInOrder.size();
     }
 
-    @Inject(method = "tick", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/world/ServerWorld;getChunkManager()Lnet/minecraft/server/world/ServerChunkManager;"))
+    @Inject(method = "tick", at = @At(value = "INVOKE", target = "Ljava/util/Set;iterator()Ljava/util/Iterator;"))
     private void onFixStl(CallbackInfo ci) {
         if (scheduledTickActionsInOrder.size() != scheduledTickActions.size())
             ParallelProcessor.fixSTL((ServerTickScheduler<T>) (Object) this, scheduledTickActionsInOrder, scheduledTickActions);

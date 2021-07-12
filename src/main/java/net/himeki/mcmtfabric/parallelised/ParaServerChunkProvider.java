@@ -13,6 +13,7 @@ import javax.annotation.Nullable;
 import net.minecraft.structure.StructureManager;
 import net.minecraft.world.PersistentStateManager;
 import net.minecraft.world.World;
+import net.minecraft.world.chunk.ChunkStatusChangeListener;
 import net.minecraft.world.level.storage.LevelStorage;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -50,9 +51,8 @@ public class ParaServerChunkProvider extends ServerChunkManager {
     private final World world;
 
     /* 1.16.1 code; AKA the only thing that changed  */
-    public ParaServerChunkProvider(ServerWorld serverWorld, LevelStorage.Session session, DataFixer dataFixer, StructureManager structureManager, Executor workerExecutor, ChunkGenerator chunkGenerator, int viewDistance, boolean bl, WorldGenerationProgressListener worldGenerationProgressListener, Supplier<PersistentStateManager> supplier) {
-        super(serverWorld, session, dataFixer, structureManager, workerExecutor, chunkGenerator,
-                viewDistance, bl, worldGenerationProgressListener, supplier);
+    public ParaServerChunkProvider(ServerWorld serverWorld, LevelStorage.Session session, DataFixer dataFixer, StructureManager structureManager, Executor workerExecutor, ChunkGenerator chunkGenerator, int viewDistance, boolean bl, WorldGenerationProgressListener worldGenerationProgressListener, ChunkStatusChangeListener chunkStatusChangeListener, Supplier<PersistentStateManager> supplier) {
+        super(serverWorld,session,dataFixer,structureManager,workerExecutor,chunkGenerator,viewDistance,bl,worldGenerationProgressListener, chunkStatusChangeListener,supplier);
         world = serverWorld;
         cacheThread = new Thread(this::chunkCacheCleanup, "Chunk Cache Cleaner " + serverWorld.getRegistryKey().getValue().getPath());
         cacheThread.start();

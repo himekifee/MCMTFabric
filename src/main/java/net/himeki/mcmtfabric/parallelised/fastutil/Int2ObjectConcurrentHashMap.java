@@ -1,5 +1,6 @@
 package net.himeki.mcmtfabric.parallelised.fastutil;
 
+import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -88,4 +89,7 @@ public class Int2ObjectConcurrentHashMap<V> implements Int2ObjectMap<V> {
     public V remove(int key) {
         return backing.remove(key);
     }
+
+    @Override
+    public void clear() { backing.clear(); }
 }

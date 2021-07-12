@@ -15,10 +15,12 @@ import org.spongepowered.asm.mixin.extensibility.IMixinInfo;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
+import java.util.TreeSet;
 
 public class SynchronisePlugin implements IMixinConfigPlugin {
     private static final Logger syncLogger = LogManager.getLogger();
     private final Multimap<String, String> mixin2MethodsMap = ArrayListMultimap.create();
+    private final TreeSet<String> syncAllSet = new TreeSet();
 
     @Override
     public void onLoad(String mixinPackage) {
@@ -30,6 +32,12 @@ public class SynchronisePlugin implements IMixinConfigPlugin {
         mixin2MethodsMap.put("net.himeki.mcmtfabric.mixin.ServerWorldMixin", mappingResolver.mapMethodName("intermediary", "net.minecraft.class_1937", "method_19282", "(Lnet/minecraft/class_2338;Lnet/minecraft/class_2680;Lnet/minecraft/class_2680;)V"));
         mixin2MethodsMap.put("net.himeki.mcmtfabric.mixin.LevelPropagatorMixin", mappingResolver.mapMethodName("intermediary", "net.minecraft.class_3554", "method_15492", "(I)I"));
         mixin2MethodsMap.put("net.himeki.mcmtfabric.mixin.LevelPropagatorMixin", mappingResolver.mapMethodName("intermediary", "net.minecraft.class_3554", "method_15478", "(JJIZ)V"));
+        mixin2MethodsMap.put("net.himeki.mcmtfabric.mixin.SpawnHelperMixin", mappingResolver.mapMethodName("intermediary", "net.minecraft.class_1948", "method_27815", "(ILjava/lang/Iterable;Lnet/minecraft/class_1948$class_5260;)Lnet/minecraft/class_1948$class_5262;"));
+
+        syncAllSet.add("net.himeki.mcmtfabric.mixin.fastutil.Int2ObjectOpenHashMapMixin");
+        syncAllSet.add("net.himeki.mcmtfabric.mixin.fastutil.Long2ObjectOpenHashMapMixin");
+        syncAllSet.add("net.himeki.mcmtfabric.mixin.fastutil.LongLinkedOpenHashSetMixin");
+        syncAllSet.add("net.himeki.mcmtfabric.mixin.PalettedContainerMixin");
     }
 
     @Override
@@ -68,7 +76,7 @@ public class SynchronisePlugin implements IMixinConfigPlugin {
                         syncLogger.info("Setting synchronize bit for " + method.name + " in " + targetClassName + ".");
                     }
             }
-        else if (mixinClassName.equals("net.himeki.mcmtfabric.mixin.fastutil.Int2ObjectOpenHashMapMixin") || mixinClassName.equals("net.himeki.mcmtfabric.mixin.fastutil.Long2ObjectOpenHashMapMixin") || mixinClassName.equals("net.himeki.mcmtfabric.mixin.fastutil.LongLinkedOpenHashSetMixin")) {
+        else if (syncAllSet.contains(mixinClassName)) {
             int posFilter = Opcodes.ACC_PUBLIC;
             int negFilter = Opcodes.ACC_STATIC | Opcodes.ACC_SYNTHETIC | Opcodes.ACC_NATIVE | Opcodes.ACC_ABSTRACT | Opcodes.ACC_BRIDGE;
 

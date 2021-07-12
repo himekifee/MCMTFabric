@@ -2,7 +2,6 @@ package net.himeki.mcmtfabric;
 
 import net.himeki.mcmtfabric.config.GeneralConfig;
 import net.himeki.mcmtfabric.parallelised.ChunkLock;
-import net.himeki.mcmtfabric.parallelised.RunnableManagedBlocker;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.block.entity.PistonBlockEntity;
 import net.minecraft.entity.Entity;
@@ -11,10 +10,10 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.world.BlockEvent;
 import net.minecraft.server.world.ServerTickScheduler;
 import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.Tickable;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.ScheduledTick;
 import net.minecraft.world.World;
+import net.minecraft.world.chunk.BlockEntityTickInvoker;
 import net.minecraft.world.chunk.WorldChunk;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -171,7 +170,7 @@ public class ParallelProcessor {
         });
     }
 
-    public static boolean filterTE(Tickable tte) {
+    public static boolean filterTE(BlockEntityTickInvoker tte) {
         boolean isLocking = false;
         if (GeneralConfig.teBlackList.contains(tte.getClass())) {
             isLocking = true;
@@ -189,7 +188,7 @@ public class ParallelProcessor {
         return isLocking;
     }
 
-    public static void callTileEntityTick(Tickable tte, World world) {
+    public static void callTileEntityTick(BlockEntityTickInvoker tte, World world) {
         if (GeneralConfig.disabled || GeneralConfig.disableTileEntity || !(world instanceof ServerWorld)) {
             tte.tick();
             return;
@@ -201,7 +200,7 @@ public class ParallelProcessor {
             try {
                 final boolean doLock = filterTE(tte);
                 if (doLock) {
-                    BlockPos bp = ((BlockEntity) tte).getPos();
+                    BlockPos bp = tte.getPos();
                     long[] locks = ChunkLock.lock(bp, 1);
                     try {
                         currentTEs.incrementAndGet();
@@ -214,7 +213,7 @@ public class ParallelProcessor {
                     tte.tick();
                 }
             } catch (Exception e) {
-                System.err.println("Exception ticking TE at " + ((BlockEntity) tte).getPos());
+                System.err.println("Exception ticking TE at " + tte.getPos());
                 e.printStackTrace();
             } finally {
                 currentTEs.decrementAndGet();
@@ -224,7 +223,7 @@ public class ParallelProcessor {
         });
     }
 
-    public static <T> void fixSTL(ServerTickScheduler<T> stl, TreeSet<ScheduledTick<T>> scheduledTickActionsInOrder, Set<ScheduledTick<T>> scheduledTickActions) {
+    public static <T> void fixSTL(ServerTickScheduler<T> stl, Set<ScheduledTick<T>> scheduledTickActionsInOrder, Set<ScheduledTick<T>> scheduledTickActions) {
         LOGGER.debug("FixSTL Called");
         scheduledTickActionsInOrder.addAll(scheduledTickActions);
     }

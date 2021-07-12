@@ -1,14 +1,12 @@
 package net.himeki.mcmtfabric.mixin;
 
 import com.mojang.datafixers.DataFixer;
-import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.objects.ObjectLinkedOpenHashSet;
 import net.himeki.mcmtfabric.ParallelProcessor;
 import net.himeki.mcmtfabric.parallelised.ConcurrentCollections;
 import net.himeki.mcmtfabric.parallelised.ParaServerChunkProvider;
-import net.himeki.mcmtfabric.parallelised.fastutil.Int2ObjectConcurrentHashMap;
 import net.minecraft.entity.Entity;
-import net.minecraft.entity.ai.pathing.EntityNavigation;
+import net.minecraft.entity.mob.MobEntity;
 import net.minecraft.server.WorldGenerationProgressListener;
 import net.minecraft.server.world.BlockEvent;
 import net.minecraft.server.world.ServerChunkManager;
@@ -20,6 +18,7 @@ import net.minecraft.world.MutableWorldProperties;
 import net.minecraft.world.PersistentStateManager;
 import net.minecraft.world.StructureWorldAccess;
 import net.minecraft.world.World;
+import net.minecraft.world.chunk.ChunkStatusChangeListener;
 import net.minecraft.world.dimension.DimensionType;
 import net.minecraft.world.gen.chunk.ChunkGenerator;
 import net.minecraft.world.level.storage.LevelStorage;
@@ -46,19 +45,15 @@ public abstract class ServerWorldMixin extends World implements StructureWorldAc
 
     @Shadow
     @Final
-    private Set<EntityNavigation> entityNavigations = ConcurrentCollections.newHashSet();
+    Set<MobEntity> loadedMobs = ConcurrentCollections.newHashSet();
 
     @Shadow
     @Final
     private ObjectLinkedOpenHashSet<BlockEvent> syncedBlockEventQueue = null;
 
-    @Shadow
-    @Final
-    private Int2ObjectMap<Entity> entitiesById = new Int2ObjectConcurrentHashMap<>();
-
     @Redirect(method = "<init>", at = @At(value = "NEW", target = "net/minecraft/server/world/ServerChunkManager"))
-    private ServerChunkManager overwriteServerChunkManager(ServerWorld serverWorld, LevelStorage.Session session, DataFixer dataFixer, StructureManager structureManager, Executor workerExecutor, ChunkGenerator chunkGenerator, int viewDistance, boolean bl, WorldGenerationProgressListener worldGenerationProgressListener, Supplier<PersistentStateManager> supplier) {
-        return new ParaServerChunkProvider(serverWorld, session, dataFixer, structureManager, workerExecutor, chunkGenerator, viewDistance, bl, worldGenerationProgressListener, supplier);
+    private ServerChunkManager overwriteServerChunkManager(ServerWorld serverWorld, LevelStorage.Session session, DataFixer dataFixer, StructureManager structureManager, Executor workerExecutor, ChunkGenerator chunkGenerator, int viewDistance, boolean bl, WorldGenerationProgressListener worldGenerationProgressListener, ChunkStatusChangeListener chunkStatusChangeListener, Supplier<PersistentStateManager> supplier) {
+        return new ParaServerChunkProvider(serverWorld, session, dataFixer, structureManager, workerExecutor, chunkGenerator, viewDistance, bl, worldGenerationProgressListener, chunkStatusChangeListener, supplier);
     }
 
     @Redirect(method = "tickEntity", at = @At(value = "INVOKE", target = "Lnet/minecraft/entity/Entity;tick()V"))
