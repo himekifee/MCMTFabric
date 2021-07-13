@@ -2,7 +2,6 @@ package net.himeki.mcmtfabric;
 
 import net.himeki.mcmtfabric.config.GeneralConfig;
 import net.himeki.mcmtfabric.parallelised.ChunkLock;
-import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.block.entity.PistonBlockEntity;
 import net.minecraft.entity.Entity;
 import net.minecraft.network.packet.s2c.play.BlockEventS2CPacket;
@@ -18,7 +17,10 @@ import net.minecraft.world.chunk.WorldChunk;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.util.*;
+import java.util.Deque;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -36,9 +38,12 @@ public class ParallelProcessor {
 
     public static void setupThreadPool(int parallelism) {
         threadID = new AtomicInteger();
+        final ClassLoader cl = MCMT.class.getClassLoader();
         ForkJoinPool.ForkJoinWorkerThreadFactory fjpf = p -> {
             ForkJoinWorkerThread fjwt = ForkJoinPool.defaultForkJoinWorkerThreadFactory.newThread(p);
             fjwt.setName("MCMT-Pool-Thread-" + threadID.getAndIncrement());
+            regThread("MCMT", fjwt);
+            fjwt.setContextClassLoader(cl);
             return fjwt;
         };
         ex = new ForkJoinPool(parallelism, fjpf, null, true);
@@ -72,6 +77,10 @@ public class ParallelProcessor {
 
     public static boolean isThreadPooled(String poolName, Thread t) {
         return mcThreadTracker.containsKey(poolName) && mcThreadTracker.get(poolName).contains(t);
+    }
+
+    public static boolean serverExecutionThreadPatch(MinecraftServer ms) {
+        return isThreadPooled("MCMT", Thread.currentThread());
     }
 
     public static void preTick(MinecraftServer server) {

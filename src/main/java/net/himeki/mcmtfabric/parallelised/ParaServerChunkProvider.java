@@ -1,36 +1,34 @@
 package net.himeki.mcmtfabric.parallelised;
 
+import com.mojang.datafixers.DataFixer;
+import net.himeki.mcmtfabric.ParallelProcessor;
+import net.himeki.mcmtfabric.config.GeneralConfig;
+import net.minecraft.server.WorldGenerationProgressListener;
+import net.minecraft.server.world.ServerChunkManager;
+import net.minecraft.server.world.ServerWorld;
+import net.minecraft.structure.StructureManager;
+import net.minecraft.util.math.ChunkPos;
+import net.minecraft.world.PersistentStateManager;
+import net.minecraft.world.World;
+import net.minecraft.world.chunk.Chunk;
+import net.minecraft.world.chunk.ChunkStatus;
+import net.minecraft.world.chunk.ChunkStatusChangeListener;
+import net.minecraft.world.gen.chunk.ChunkGenerator;
+import net.minecraft.world.level.storage.LevelStorage;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.Marker;
+import org.apache.logging.log4j.MarkerManager;
+
+import javax.annotation.Nullable;
 import java.lang.ref.WeakReference;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
-
-import javax.annotation.Nullable;
-
-import net.minecraft.structure.StructureManager;
-import net.minecraft.world.PersistentStateManager;
-import net.minecraft.world.World;
-import net.minecraft.world.chunk.ChunkStatusChangeListener;
-import net.minecraft.world.level.storage.LevelStorage;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.Marker;
-import org.apache.logging.log4j.MarkerManager;
-import net.himeki.mcmtfabric.ParallelProcessor;
-import net.himeki.mcmtfabric.config.GeneralConfig;
-
-import com.mojang.datafixers.DataFixer;
-
-import net.minecraft.util.math.ChunkPos;
-import net.minecraft.world.chunk.Chunk;
-import net.minecraft.world.chunk.ChunkStatus;
-import net.minecraft.server.WorldGenerationProgressListener;
-import net.minecraft.world.gen.chunk.ChunkGenerator;
-import net.minecraft.server.world.ServerChunkManager;
-import net.minecraft.server.world.ServerWorld;
 
 /* 1.16.1 code; AKA the only thing that changed  */
 //import net.minecraft.world.storage.SaveFormat.LevelSave;
@@ -43,8 +41,8 @@ import java.io.File;
 public class ParaServerChunkProvider extends ServerChunkManager {
 
     protected Map<ChunkCacheAddress, ChunkCacheLine> chunkCache = new ConcurrentHashMap<ChunkCacheAddress, ChunkCacheLine>();
-    protected int access = Integer.MIN_VALUE;
-    protected static final int CACHE_SIZE = 64;
+    protected AtomicInteger access = new AtomicInteger(Integer.MIN_VALUE);
+    protected static final int CACHE_SIZE = 512;
     protected Thread cacheThread;
     Logger log = LogManager.getLogger();
     Marker chunkCleaner = MarkerManager.getMarker("ChunkCleaner");
@@ -81,20 +79,21 @@ public class ParaServerChunkProvider extends ServerChunkManager {
             }
             return super.getChunk(chunkX, chunkZ, requiredStatus, load);
         }
-        long i = ChunkPos.toLong(chunkX, chunkZ);
-
-        Chunk c = lookupChunk(i, requiredStatus);
-        if (c != null) {
-            return c;
-        }
-
-        //log.debug("Missed chunk " + i + " on status "  + requiredStatus.toString());
 
         if (ParallelProcessor.isThreadPooled("Main", Thread.currentThread())) {
             return CompletableFuture.supplyAsync(() -> {
                 return this.getChunk(chunkX, chunkZ, requiredStatus, load);
             }, this.mainThreadExecutor).join();
         }
+
+        long i = ChunkPos.toLong(chunkX, chunkZ);
+
+        Chunk c = lookupChunk(i, requiredStatus, false);
+        if (c != null) {
+            return c;
+        }
+
+        //log.debug("Missed chunk " + i + " on status "  + requiredStatus.toString());
 
         Chunk cl;
         synchronized (this) {
@@ -104,46 +103,35 @@ public class ParaServerChunkProvider extends ServerChunkManager {
         return cl;
     }
 
-    /* 1.15.2/1.16.2
-    @Override
-    @Nullable
-    public Chunk getChunkNow(int chunkX, int chunkZ) {
-        if (GeneralConfig.disabled) {
-            return super.getChunkNow(chunkX, chunkZ);
+    @SuppressWarnings("unused")
+    private Chunk getChunkyThing(long chunkPos, ChunkStatus requiredStatus, boolean load) {
+        Chunk cl;
+        synchronized (this) {
+            cl = super.getChunk(ChunkPos.getPackedX(chunkPos), ChunkPos.getPackedZ(chunkPos), requiredStatus, load);
         }
-        long i = ChunkPos.toLong(chunkX, chunkZ);
-
-        Chunk c = lookupChunk(i, ChunkStatus.FULL);
-        if (c != null) {
-            return (Chunk) c;
-        }
-
-        //log.debug("Missed chunk " + i + " now");
-
-        Chunk cl = super.getChunkNow(chunkX, chunkZ);
-        cacheChunk(i, cl, ChunkStatus.FULL);
         return cl;
     }
-     */
 
-    public Chunk lookupChunk(long chunkPos, ChunkStatus status) {
-        int oldaccess = access++;
-        if (access < oldaccess) {
+    public Chunk lookupChunk(long chunkPos, ChunkStatus status, boolean compute) {
+        int oldAccess = access.getAndIncrement();
+        if (access.get() < oldAccess) {
             // Long Rollover so super rare
             chunkCache.clear();
             return null;
         }
-        ChunkCacheLine ccl = chunkCache.get(new ChunkCacheAddress(chunkPos, status));
+        ChunkCacheLine ccl;
+        ccl = chunkCache.get(new ChunkCacheAddress(chunkPos, status));
         if (ccl != null) {
             ccl.updateLastAccess();
             return ccl.getChunk();
         }
         return null;
+
     }
 
     public void cacheChunk(long chunkPos, Chunk chunk, ChunkStatus status) {
-        long oldaccess = access++;
-        if (access < oldaccess) {
+        long oldAccess = access.getAndIncrement();
+        if (access.get() < oldAccess) {
             // Long Rollover so super rare
             chunkCache.clear();
         }
@@ -175,7 +163,7 @@ public class ParaServerChunkProvider extends ServerChunkManager {
             if (size < CACHE_SIZE)
                 continue;
             // System.out.println("CacheFill: " + size);
-            long maxAccess = chunkCache.values().stream().mapToInt(ccl -> ccl.lastAccess).max().orElseGet(() -> access);
+            long maxAccess = chunkCache.values().stream().mapToInt(ccl -> ccl.lastAccess).max().orElseGet(() -> access.get());
             long minAccess = chunkCache.values().stream().mapToInt(ccl -> ccl.lastAccess).min()
                     .orElseGet(() -> Integer.MIN_VALUE);
             long cutoff = minAccess + (long) ((maxAccess - minAccess) / ((float) size / ((float) CACHE_SIZE)));
@@ -220,7 +208,7 @@ public class ParaServerChunkProvider extends ServerChunkManager {
         int lastAccess;
 
         public ChunkCacheLine(Chunk chunk) {
-            this(chunk, access);
+            this(chunk, access.get());
         }
 
         public ChunkCacheLine(Chunk chunk, int lastAccess) {
@@ -237,7 +225,7 @@ public class ParaServerChunkProvider extends ServerChunkManager {
         }
 
         public void updateLastAccess() {
-            lastAccess = access;
+            lastAccess = access.get();
         }
 
         public void updateChunkRef(Chunk c) {

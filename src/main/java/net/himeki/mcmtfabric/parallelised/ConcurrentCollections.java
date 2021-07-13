@@ -1,15 +1,14 @@
 package net.himeki.mcmtfabric.parallelised;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
-
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 public class ConcurrentCollections {
 
@@ -20,6 +19,11 @@ public class ConcurrentCollections {
         return Collections.newSetFromMap(new ConcurrentHashMap<T, Boolean>());
     }
 
+    public static <T, U> Map<T, U> newHashMap() {
+        LOGGER.info("Concurrent hash map created");
+        return new ConcurrentHashMap<T, U>();
+    }
+
     public static <T> List<T> newLinkedList() {
         LOGGER.info("Concurrent \"linked\" list created");
         return new CopyOnWriteArrayList<T>();
@@ -28,4 +32,10 @@ public class ConcurrentCollections {
     public static <T> Collector<T, ?, List<T>> toList() {
         return Collectors.toCollection(CopyOnWriteArrayList::new);
     }
+
+    public static <T> Queue<T> newArrayDeque() {
+        LOGGER.info("Concurrent \"array\" deque created");
+        return new ConcurrentLinkedDeque<T>();
+    }
+
 }

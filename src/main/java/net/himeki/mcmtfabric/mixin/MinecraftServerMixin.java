@@ -35,5 +35,10 @@ public abstract class MinecraftServerMixin extends ReentrantThreadExecutor<Serve
     private void overwriteTick(ServerWorld serverWorld, BooleanSupplier shouldKeepTicking) {
         ParallelProcessor.callTick(serverWorld, shouldKeepTicking, (MinecraftServer) (Object) this);
     }
+
+    @Redirect(method = "reloadResources", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/MinecraftServer;isOnThread()Z"))
+    private boolean onServerExecutionThreadPatch(MinecraftServer minecraftServer) {
+        return ParallelProcessor.serverExecutionThreadPatch(minecraftServer);
+    }
 }
 
