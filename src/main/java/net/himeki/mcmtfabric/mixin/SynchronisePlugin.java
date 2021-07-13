@@ -32,12 +32,13 @@ public class SynchronisePlugin implements IMixinConfigPlugin {
         mixin2MethodsMap.put("net.himeki.mcmtfabric.mixin.ServerWorldMixin", mappingResolver.mapMethodName("intermediary", "net.minecraft.class_1937", "method_19282", "(Lnet/minecraft/class_2338;Lnet/minecraft/class_2680;Lnet/minecraft/class_2680;)V"));
         mixin2MethodsMap.put("net.himeki.mcmtfabric.mixin.LevelPropagatorMixin", mappingResolver.mapMethodName("intermediary", "net.minecraft.class_3554", "method_15492", "(I)I"));
         mixin2MethodsMap.put("net.himeki.mcmtfabric.mixin.LevelPropagatorMixin", mappingResolver.mapMethodName("intermediary", "net.minecraft.class_3554", "method_15478", "(JJIZ)V"));
-        mixin2MethodsMap.put("net.himeki.mcmtfabric.mixin.SpawnHelperMixin", mappingResolver.mapMethodName("intermediary", "net.minecraft.class_1948", "method_27815", "(ILjava/lang/Iterable;Lnet/minecraft/class_1948$class_5260;)Lnet/minecraft/class_1948$class_5262;"));
+
 
         syncAllSet.add("net.himeki.mcmtfabric.mixin.fastutil.Int2ObjectOpenHashMapMixin");
         syncAllSet.add("net.himeki.mcmtfabric.mixin.fastutil.Long2ObjectOpenHashMapMixin");
         syncAllSet.add("net.himeki.mcmtfabric.mixin.fastutil.LongLinkedOpenHashSetMixin");
         syncAllSet.add("net.himeki.mcmtfabric.mixin.PalettedContainerMixin");
+        syncAllSet.add("net.himeki.mcmtfabric.mixin.EntityIndexMixin");
     }
 
     @Override

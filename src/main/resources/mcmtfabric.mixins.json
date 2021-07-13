@@ -4,6 +4,7 @@
   "package": "net.himeki.mcmtfabric.mixin",
   "compatibilityLevel": "JAVA_16",
   "mixins": [
+    "EntityIndexMixin",
     "EntityListMixin",
     "LevelPropagatorMixin",
     "MinecraftServerMixin",
@@ -13,7 +14,6 @@
     "ServerTickSchedulerMixin",
     "ServerWorldMixin",
     "SharedConstantsMixin",
-    "SpawnHelperMixin",
     "TypeFilterableListMixin",
     "UtilMixin",
     "WorldMixin",
