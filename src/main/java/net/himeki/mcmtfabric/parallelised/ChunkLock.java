@@ -1,15 +1,14 @@
 package net.himeki.mcmtfabric.parallelised;
 
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.ChunkPos;
+import org.apache.commons.lang3.ArrayUtils;
+
 import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-
-import org.apache.commons.lang3.ArrayUtils;
-
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.ChunkPos;
 
 public class ChunkLock {
 

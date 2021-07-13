@@ -2,7 +2,6 @@ package net.himeki.mcmtfabric;
 
 import net.himeki.mcmtfabric.config.GeneralConfig;
 import net.himeki.mcmtfabric.parallelised.ChunkLock;
-import net.himeki.mcmtfabric.parallelised.RunnableManagedBlocker;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.block.entity.PistonBlockEntity;
 import net.minecraft.entity.Entity;
@@ -73,6 +72,10 @@ public class ParallelProcessor {
 
     public static boolean isThreadPooled(String poolName, Thread t) {
         return mcThreadTracker.containsKey(poolName) && mcThreadTracker.get(poolName).contains(t);
+    }
+
+    public static boolean serverExecutionThreadPatch(MinecraftServer ms) {
+        return isThreadPooled("MCMT", Thread.currentThread());
     }
 
     public static void preTick(MinecraftServer server) {

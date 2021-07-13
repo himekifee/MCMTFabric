@@ -1,14 +1,13 @@
 package net.himeki.mcmtfabric.parallelised.fastutil;
 
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
-import org.apache.commons.lang3.NotImplementedException;
-
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.IntSet;
 import it.unimi.dsi.fastutil.objects.ObjectCollection;
 import it.unimi.dsi.fastutil.objects.ObjectSet;
+import org.apache.commons.lang3.NotImplementedException;
+
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class Int2ObjectConcurrentHashMap<V> implements Int2ObjectMap<V> {
 
@@ -88,4 +87,7 @@ public class Int2ObjectConcurrentHashMap<V> implements Int2ObjectMap<V> {
     public V remove(int key) {
         return backing.remove(key);
     }
+
+    @Override
+    public void clear() { backing.clear(); }
 }
