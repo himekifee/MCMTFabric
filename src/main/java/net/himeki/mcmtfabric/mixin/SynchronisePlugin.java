@@ -39,6 +39,7 @@ public class SynchronisePlugin implements IMixinConfigPlugin {
         syncAllSet.add("net.himeki.mcmtfabric.mixin.fastutil.LongLinkedOpenHashSetMixin");
         syncAllSet.add("net.himeki.mcmtfabric.mixin.PalettedContainerMixin");
         syncAllSet.add("net.himeki.mcmtfabric.mixin.EntityIndexMixin");
+        syncAllSet.add("net.himeki.mcmtfabric.mixin.SectionedEntityCache");
     }
 
     @Override

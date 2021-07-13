@@ -9,6 +9,7 @@
     "LevelPropagatorMixin",
     "MinecraftServerMixin",
     "PalettedContainerMixin",
+    "SectionedEntityCacheMixin",
     "SerializingRegionBasedStorageMixin",
     "ServerChunkManagerMixin",
     "ServerTickSchedulerMixin",
