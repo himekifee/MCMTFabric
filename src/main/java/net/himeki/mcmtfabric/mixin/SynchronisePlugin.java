@@ -32,6 +32,9 @@ public class SynchronisePlugin implements IMixinConfigPlugin {
         mixin2MethodsMap.put("net.himeki.mcmtfabric.mixin.ServerWorldMixin", mappingResolver.mapMethodName("intermediary", "net.minecraft.class_1937", "method_19282", "(Lnet/minecraft/class_2338;Lnet/minecraft/class_2680;Lnet/minecraft/class_2680;)V"));
         mixin2MethodsMap.put("net.himeki.mcmtfabric.mixin.LevelPropagatorMixin", mappingResolver.mapMethodName("intermediary", "net.minecraft.class_3554", "method_15492", "(I)I"));
         mixin2MethodsMap.put("net.himeki.mcmtfabric.mixin.LevelPropagatorMixin", mappingResolver.mapMethodName("intermediary", "net.minecraft.class_3554", "method_15478", "(JJIZ)V"));
+        mixin2MethodsMap.put("net.himeki.mcmtfabric.mixin.SectionedEntityCacheMixin","addSection");
+        mixin2MethodsMap.put("net.himeki.mcmtfabric.mixin.SectionedEntityCacheMixin","removeSection");
+        mixin2MethodsMap.put("net.himeki.mcmtfabric.mixin.SectionedEntityCacheMixin","sectionCount");
 
 
         syncAllSet.add("net.himeki.mcmtfabric.mixin.fastutil.Int2ObjectOpenHashMapMixin");
