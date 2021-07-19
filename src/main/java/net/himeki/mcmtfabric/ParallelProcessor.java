@@ -54,10 +54,7 @@ public class ParallelProcessor {
      */
     static {
         // Must be static here due to class loading shenanagins
-        int threads = Runtime.getRuntime().availableProcessors();
-        setupThreadPool(threads);
-        LOGGER.info("Running MCMT-Pool with " + threads + " threads");
-//        setupThreadPool(4);
+        setupThreadPool(4);
     }
 
     static Map<String, Set<Thread>> mcThreadTracker = new ConcurrentHashMap<String, Set<Thread>>();
@@ -110,8 +107,12 @@ public class ParallelProcessor {
             serverworld.tick(hasTimeLeft);
             return;
         } else {
-            String taskName = "WorldTick: " + serverworld.toString() + "@" + serverworld.hashCode();
-            if (GeneralConfig.opsTracing) currentTasks.add(taskName);
+            String taskName = null;
+            if (GeneralConfig.opsTracing) {
+                taskName = "WorldTick: " + serverworld.toString() + "@" + serverworld.hashCode();
+                currentTasks.add(taskName);
+            }
+            String finalTaskName = taskName;
             p.register();
             ex.execute(() -> {
                 try {
@@ -120,7 +121,7 @@ public class ParallelProcessor {
                 } finally {
                     p.arriveAndDeregister();
                     currentWorlds.decrementAndGet();
-                    if (GeneralConfig.opsTracing) currentTasks.remove(taskName);
+                    if (GeneralConfig.opsTracing) currentTasks.remove(finalTaskName);
                 }
             });
         }
@@ -144,8 +145,12 @@ public class ParallelProcessor {
             entityIn.tick();
             return;
         }
-        String taskName = "EntityTick: " + entityIn.toString() + "@" + entityIn.hashCode();
-        if (GeneralConfig.opsTracing) currentTasks.add(taskName);
+        String taskName = null;
+        if (GeneralConfig.opsTracing) {
+            taskName = "EntityTick: " + entityIn.toString() + "@" + entityIn.hashCode();
+            currentTasks.add(taskName);
+        }
+        String finalTaskName = taskName;
         p.register();
         ex.execute(() -> {
             try {
@@ -154,7 +159,7 @@ public class ParallelProcessor {
             } finally {
                 currentEnts.decrementAndGet();
                 p.arriveAndDeregister();
-                if (GeneralConfig.opsTracing) currentTasks.remove(taskName);
+                if (GeneralConfig.opsTracing) currentTasks.remove(finalTaskName);
             }
         });
     }
@@ -164,8 +169,12 @@ public class ParallelProcessor {
             world.tickChunk(chunk, k);
             return;
         }
-        String taskName = "EnvTick: " + chunk.toString() + "@" + chunk.hashCode();
-        if (GeneralConfig.opsTracing) currentTasks.add(taskName);
+        String taskName = null;
+        if (GeneralConfig.opsTracing) {
+            taskName = "EnvTick: " + chunk.toString() + "@" + chunk.hashCode();
+            currentTasks.add(taskName);
+        }
+        String finalTaskName = taskName;
         p.register();
         ex.execute(() -> {
             try {
@@ -174,7 +183,7 @@ public class ParallelProcessor {
             } finally {
                 currentEnvs.decrementAndGet();
                 p.arriveAndDeregister();
-                if (GeneralConfig.opsTracing) currentTasks.remove(taskName);
+                if (GeneralConfig.opsTracing) currentTasks.remove(finalTaskName);
             }
         });
     }
@@ -202,8 +211,12 @@ public class ParallelProcessor {
             tte.tick();
             return;
         }
-        String taskName = "TETick: " + tte.toString() + "@" + tte.hashCode();
-        if (GeneralConfig.opsTracing) currentTasks.add(taskName);
+        String taskName = null;
+        if (GeneralConfig.opsTracing) {
+            taskName = "TETick: " + tte.toString() + "@" + tte.hashCode();
+            currentTasks.add(taskName);
+        }
+        String finalTaskName = taskName;
         p.register();
         ex.execute(() -> {
             try {
@@ -227,7 +240,7 @@ public class ParallelProcessor {
             } finally {
                 currentTEs.decrementAndGet();
                 p.arriveAndDeregister();
-                if (GeneralConfig.opsTracing) currentTasks.remove(taskName);
+                if (GeneralConfig.opsTracing) currentTasks.remove(finalTaskName);
             }
         });
     }

@@ -14,7 +14,7 @@
     "ServerChunkManagerMixin",
     "ServerTickSchedulerMixin",
     "ServerWorldMixin",
-    "SharedConstantsMixin",
+
     "TypeFilterableListMixin",
     "UtilMixin",
     "WorldMixin",

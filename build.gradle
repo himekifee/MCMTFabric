@@ -16,9 +16,8 @@ repositories {
     // Loom adds the essential maven repositories to download Minecraft and libraries from automatically.
     // See https://docs.gradle.org/current/userguide/declaring_repositories.html
     // for more information about repositories.
-    maven {
-        url = 'https://raw.githubusercontent.com/Devan-Kerman/Devan-Repo/master/'
-    }
+    maven { url = 'https://raw.githubusercontent.com/Devan-Kerman/Devan-Repo/master/' }
+    maven { url "https://maven.shedaniel.me/" }
 }
 
 dependencies {
@@ -34,9 +33,13 @@ dependencies {
     // You may need to force-disable transitiveness on them.
 
     modImplementation group: 'net.devtech', name: 'grossfabrichacks', version: '6.1'
+    modImplementation "io.github.prospector:modmenu:2.0.0-beta.1+build.2"
     implementation group: 'com.google.code.findbugs', name: 'jsr305', version: '3.0.2'
 
     include group: 'net.devtech', name: 'grossfabrichacks', version: '6.1'
+    modApi("me.shedaniel.cloth:cloth-config-fabric:5.0.34") {
+        exclude(group: "net.fabricmc.fabric-api")
+    }
 }
 
 processResources {
@@ -47,6 +50,7 @@ processResources {
     }
 }
 
+
 tasks.withType(JavaCompile).configureEach {
     // ensure that the encoding is set to UTF-8, no matter what the system default is
     // this fixes some edge cases with special characters not displaying correctly
@@ -54,13 +58,8 @@ tasks.withType(JavaCompile).configureEach {
     // If Javadoc is generated, this must be specified in that task too.
     it.options.encoding = "UTF-8"
 
-    // The Minecraft launcher currently installs Java 8 for users, so your mod probably wants to target Java 8 too
-    // JDK 9 introduced a new way of specifying this that will make sure no newer classes or methods are used.
-    // We'll use that if it's available, but otherwise we'll use the older option.
-    def targetVersion = 8
-    if (JavaVersion.current().isJava9Compatible()) {
-        it.options.release = targetVersion
-    }
+    // Minecraft 1.17 (21w19a) upwards uses Java 16.
+    it.options.release = 16
 }
 
 java {
@@ -71,7 +70,7 @@ java {
 }
 
 minecraft {
-    accessWidener =  file("src/main/resources/mcmtfabric.accesswidener")
+    accessWidener = file("src/main/resources/mcmtfabric.accesswidener")
 }
 
 jar {
