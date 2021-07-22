@@ -4,7 +4,9 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.builder.ArgumentBuilder;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import me.shedaniel.autoconfig.AutoConfig;
 import net.himeki.mcmtfabric.ParallelProcessor;
+import net.himeki.mcmtfabric.config.BlockEntityLists;
 import net.himeki.mcmtfabric.config.GeneralConfig;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.block.entity.BlockEntityTicker;
@@ -81,16 +83,16 @@ public class ConfigCommand {
             cmdCtx.getSource().sendFeedback(message, true);
             return 1;
         }))
-//                .then(literal("save").requires(cmdSrc -> {
-//            return cmdSrc.hasPermissionLevel(2);
-//        }).executes(cmdCtx -> {
-//            LiteralText message = new LiteralText("Saving MCMT config to disk...");
-//            cmdCtx.getSource().sendFeedback(message, true);
-//            GeneralConfig.saveConfig();
-//            message = new LiteralText("Done!");
-//            cmdCtx.getSource().sendFeedback(message, true);
-//            return 1;
-//        }))
+                .then(literal("save").requires(cmdSrc -> {
+                    return cmdSrc.hasPermissionLevel(2);
+                }).executes(cmdCtx -> {
+                    LiteralText message = new LiteralText("Saving MCMT config to disk...");
+                    cmdCtx.getSource().sendFeedback(message, true);
+                    AutoConfig.getConfigHolder(GeneralConfig.class).save();
+                    message = new LiteralText("Done!");
+                    cmdCtx.getSource().sendFeedback(message, true);
+                    return 1;
+                }))
                 .then(literal("temanage").requires(cmdSrc -> {
                             return cmdSrc.hasPermissionLevel(2);
                         }).then(literal("list")
@@ -117,8 +119,16 @@ public class ConfigCommand {
                                         BlockPos bp = ((BlockHitResult) htr).getBlockPos();
                                         BlockEntity te = cmdCtx.getSource().getWorld().getBlockEntity(bp);
                                         if (te != null && isTickableBe(te)) {
-                                            GeneralConfig.teWhiteList.add(te.getClass());
-                                            GeneralConfig.teBlackList.remove(te.getClass());
+                                            if (GeneralConfig.teWhiteListString.contains(te.getClass().getName()))
+                                            {
+                                                message = new LiteralText("Class " + te.getClass().getName() + " already exists in TE Whitelist");
+                                                cmdCtx.getSource().sendFeedback(message, true);
+                                                return 0;
+                                            }
+                                            BlockEntityLists.teWhiteList.add(te.getClass());
+                                            GeneralConfig.teWhiteListString.add(te.getClass().getName());
+                                            BlockEntityLists.teBlackList.remove(te.getClass());
+                                            GeneralConfig.teBlackListString.remove(te.getClass().getName());
                                             message = new LiteralText("Added " + te.getClass().getName() + " to TE Whitelist");
                                             cmdCtx.getSource().sendFeedback(message, true);
                                             return 1;
@@ -137,8 +147,16 @@ public class ConfigCommand {
                                         BlockPos bp = ((BlockHitResult) htr).getBlockPos();
                                         BlockEntity te = cmdCtx.getSource().getWorld().getBlockEntity(bp);
                                         if (te != null && isTickableBe(te)) {
-                                            GeneralConfig.teBlackList.add(te.getClass());
-                                            GeneralConfig.teWhiteList.remove(te.getClass());
+                                            if (GeneralConfig.teBlackListString.contains(te.getClass().getName()))
+                                            {
+                                                message = new LiteralText("Class " + te.getClass().getName() + " already exists in TE Blacklist");
+                                                cmdCtx.getSource().sendFeedback(message, true);
+                                                return 0;
+                                            }
+                                            BlockEntityLists.teBlackList.add(te.getClass());
+                                            GeneralConfig.teBlackListString.add(te.getClass().getName());
+                                            BlockEntityLists.teWhiteList.remove(te.getClass());
+                                            GeneralConfig.teWhiteListString.remove(te.getClass().getName());
                                             message = new LiteralText("Added " + te.getClass().getName() + " to TE Blacklist");
                                             cmdCtx.getSource().sendFeedback(message, true);
                                             return 1;
@@ -147,7 +165,7 @@ public class ConfigCommand {
                                         cmdCtx.getSource().sendError(message);
                                         return 0;
                                     }
-                                    message = new LiteralText("Only runable by player!");
+                                    message = new LiteralText("Only runnable by player!");
                                     cmdCtx.getSource().sendError(message);
                                     return 0;
                                 })).then(literal("remove").executes(cmdCtx -> {
@@ -157,8 +175,10 @@ public class ConfigCommand {
                                         BlockPos bp = ((BlockHitResult) htr).getBlockPos();
                                         BlockEntity te = cmdCtx.getSource().getWorld().getBlockEntity(bp);
                                         if (te != null && isTickableBe(te)) {
-                                            GeneralConfig.teBlackList.remove(te.getClass());
-                                            GeneralConfig.teWhiteList.remove(te.getClass());
+                                            BlockEntityLists.teBlackList.remove(te.getClass());
+                                            GeneralConfig.teBlackListString.remove(te.getClass().getName());
+                                            BlockEntityLists.teWhiteList.remove(te.getClass());
+                                            GeneralConfig.teWhiteListString.remove(te.getClass().getName());
                                             message = new LiteralText("Removed " + te.getClass().getName() + " from TE classlists");
                                             cmdCtx.getSource().sendFeedback(message, true);
                                             return 1;

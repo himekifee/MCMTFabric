@@ -1,7 +1,7 @@
 package net.himeki.mcmtfabric;
 
 import me.shedaniel.autoconfig.AutoConfig;
-import me.shedaniel.autoconfig.serializer.JanksonConfigSerializer;
+import me.shedaniel.autoconfig.serializer.Toml4jConfigSerializer;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v1.CommandRegistrationCallback;
 import net.himeki.mcmtfabric.commands.ConfigCommand;
@@ -19,7 +19,7 @@ public class MCMT implements ModInitializer {
         // However, some things (like resources) may still be uninitialized.
         // Proceed with mild caution.
         LOGGER.info("Initializing MCMTFabric...");
-        AutoConfig.register(GeneralConfig.class, JanksonConfigSerializer::new);
+        AutoConfig.register(GeneralConfig.class, Toml4jConfigSerializer::new);
 
         StatsCommand.runDataThread();
         StatsCommand.resetAll();

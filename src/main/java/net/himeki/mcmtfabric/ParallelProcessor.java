@@ -1,5 +1,6 @@
 package net.himeki.mcmtfabric;
 
+import net.himeki.mcmtfabric.config.BlockEntityLists;
 import net.himeki.mcmtfabric.config.GeneralConfig;
 import net.himeki.mcmtfabric.parallelised.ChunkLock;
 import net.minecraft.block.entity.PistonBlockEntity;
@@ -190,14 +191,14 @@ public class ParallelProcessor {
 
     public static boolean filterTE(BlockEntityTickInvoker tte) {
         boolean isLocking = false;
-        if (GeneralConfig.teBlackList.contains(tte.getClass())) {
+        if (BlockEntityLists.teBlackList.contains(tte.getClass())) {
             isLocking = true;
         }
         // Apparently a string starts with check is faster than Class.getPackage; who knew (I didn't)
         if (!isLocking && GeneralConfig.chunkLockModded && !tte.getClass().getName().startsWith("net.minecraft.block.entity")) {
             isLocking = true;
         }
-        if (isLocking && GeneralConfig.teWhiteList.contains(tte.getClass())) {
+        if (isLocking && BlockEntityLists.teWhiteList.contains(tte.getClass())) {
             isLocking = false;
         }
         if (tte instanceof PistonBlockEntity) {

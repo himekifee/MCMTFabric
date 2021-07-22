@@ -7,8 +7,6 @@ import me.shedaniel.cloth.clothconfig.shadowed.blue.endless.jankson.Comment;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 @Config(name = "mcmtfabric")
 public class GeneralConfig implements ConfigData {
@@ -56,14 +54,10 @@ public class GeneralConfig implements ConfigData {
             This will occur even when chunkLockModded is set to true
             Adding pistons to this will not parallelise them"""
     )
-    @ConfigEntry.Gui.Excluded
-    public static Set<Class<?>> teWhiteList = ConcurrentHashMap.newKeySet();
     public static List<String> teWhiteListString = new ArrayList<>();
 
     @Comment("List of tile entity classes that will always be chunklocked\n"
             + "This will occur even when chunkLockModded is set to false")
-    @ConfigEntry.Gui.Excluded
-    public static Set<Class<?>> teBlackList = ConcurrentHashMap.newKeySet();
     public static List<String> teBlackListString = new ArrayList<>();
 
     // Any TE class strings that aren't available in the current environment
@@ -117,7 +111,7 @@ public class GeneralConfig implements ConfigData {
                 if (timeoutCount >= 500 && timeoutCount <= 500000)
                     if (logCap >= 15000 && logCap <= Integer.MAX_VALUE)
                         return;
-                    throw new ValidationException("Failed to validate MCMT config.");
+        throw new ValidationException("Failed to validate MCMT config.");
     }
 
     public static int getParallelism() {
@@ -144,7 +138,7 @@ public class GeneralConfig implements ConfigData {
             Class<?> c = null;
             try {
                 c = Class.forName(str);
-                teWhiteList.add(c);
+                BlockEntityLists.teWhiteList.add(c);
             } catch (ClassNotFoundException cnfe) {
                 teUnfoundWhiteList.add(str);
             }
@@ -154,11 +148,10 @@ public class GeneralConfig implements ConfigData {
             Class<?> c = null;
             try {
                 c = Class.forName(str);
-                teBlackList.add(c);
+                BlockEntityLists.teBlackList.add(c);
             } catch (ClassNotFoundException cnfe) {
                 teUnfoundBlackList.add(str);
             }
         });
-
     }
 }
