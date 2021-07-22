@@ -1,6 +1,7 @@
 package net.himeki.mcmtfabric.parallelised;
 
 import com.mojang.datafixers.DataFixer;
+import me.shedaniel.autoconfig.AutoConfig;
 import net.himeki.mcmtfabric.ParallelProcessor;
 import net.himeki.mcmtfabric.config.GeneralConfig;
 import net.minecraft.server.WorldGenerationProgressListener;
@@ -47,6 +48,7 @@ public class ParaServerChunkProvider extends ServerChunkManager {
     Logger log = LogManager.getLogger();
     Marker chunkCleaner = MarkerManager.getMarker("ChunkCleaner");
     private final World world;
+    private static GeneralConfig config;
 
     /* 1.16.1 code; AKA the only thing that changed  */
     public ParaServerChunkProvider(ServerWorld serverWorld, LevelStorage.Session session, DataFixer dataFixer, StructureManager structureManager, Executor workerExecutor, ChunkGenerator chunkGenerator, int viewDistance, boolean bl, WorldGenerationProgressListener worldGenerationProgressListener, ChunkStatusChangeListener chunkStatusChangeListener, Supplier<PersistentStateManager> supplier) {
@@ -54,6 +56,7 @@ public class ParaServerChunkProvider extends ServerChunkManager {
         world = serverWorld;
         cacheThread = new Thread(this::chunkCacheCleanup, "Chunk Cache Cleaner " + serverWorld.getRegistryKey().getValue().getPath());
         cacheThread.start();
+        config = AutoConfig.getConfigHolder(GeneralConfig.class).getConfig();
     }
     /* */
 
@@ -71,7 +74,7 @@ public class ParaServerChunkProvider extends ServerChunkManager {
     @Override
     @Nullable
     public Chunk getChunk(int chunkX, int chunkZ, ChunkStatus requiredStatus, boolean load) {
-        if (GeneralConfig.disabled || GeneralConfig.disableChunkProvider) {
+        if (config.disabled || config.disableChunkProvider) {
             if (ParallelProcessor.isThreadPooled("Main", Thread.currentThread())) {
                 return CompletableFuture.supplyAsync(() -> {
                     return this.getChunk(chunkX, chunkZ, requiredStatus, load);

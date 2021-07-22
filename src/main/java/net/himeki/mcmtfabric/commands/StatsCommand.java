@@ -1,6 +1,7 @@
 package net.himeki.mcmtfabric.commands;
 
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
+import me.shedaniel.autoconfig.AutoConfig;
 import net.himeki.mcmtfabric.ParallelProcessor;
 import net.himeki.mcmtfabric.config.GeneralConfig;
 import net.minecraft.server.MinecraftServer;
@@ -16,7 +17,9 @@ import java.util.Date;
 import static net.minecraft.server.command.CommandManager.literal;
 
 public class StatsCommand {
+    private static GeneralConfig config;
     public static LiteralArgumentBuilder<ServerCommandSource> registerStatus(LiteralArgumentBuilder<ServerCommandSource> root) {
+        config = AutoConfig.getConfigHolder(GeneralConfig.class).getConfig();
         return root.then(literal("stats").then(literal("reset").executes(cmdCtx -> {
             resetAll();
             return 1;
@@ -175,12 +178,12 @@ public class StatsCommand {
                                 float threadCount = mean(maxThreads, liveValues);
                                 long memory = Runtime.getRuntime().maxMemory() - Runtime.getRuntime().freeMemory();
                                 int enabled = 0;
-                                enabled |= GeneralConfig.disabled ? 1 : 0;
-                                enabled |= GeneralConfig.disableWorld ? 2 : 0;
-                                enabled |= GeneralConfig.disableEntity ? 4 : 0;
-                                enabled |= GeneralConfig.disableEnvironment ? 8 : 0;
-                                enabled |= GeneralConfig.disableChunkProvider ? 16 : 0;
-                                enabled |= GeneralConfig.chunkLockModded ? 256 : 0;
+                                enabled |= config.disabled ? 1 : 0;
+                                enabled |= config.disableWorld ? 2 : 0;
+                                enabled |= config.disableEntity ? 4 : 0;
+                                enabled |= config.disableEnvironment ? 8 : 0;
+                                enabled |= config.disableChunkProvider ? 16 : 0;
+                                enabled |= config.chunkLockModded ? 256 : 0;
                                 logFile.write(ticktime + "," + memory + "," + threadCount + "," + enabled + ",\n");
                             }
                         } else if (logFile != null) {
@@ -193,7 +196,7 @@ public class StatsCommand {
                         if (warnLog % warningDelay == 0) {
                             mtlog.warn("MCMT is installed; error logs are likely invalid for any other mods");
                             warningDelay *= 1.2;
-                            warningDelay = Math.min(warningDelay, Math.max(GeneralConfig.logCap, 15000)); // Max delay ~~ 2 hours
+                            warningDelay = Math.min(warningDelay, Math.max(config.logCap, 15000)); // Max delay ~~ 2 hours
                         }
                     }
                 } catch (Exception e) {

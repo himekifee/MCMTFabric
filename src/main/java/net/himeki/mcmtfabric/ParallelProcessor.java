@@ -1,5 +1,6 @@
 package net.himeki.mcmtfabric;
 
+import me.shedaniel.autoconfig.AutoConfig;
 import net.himeki.mcmtfabric.config.BlockEntityLists;
 import net.himeki.mcmtfabric.config.GeneralConfig;
 import net.himeki.mcmtfabric.parallelised.ChunkLock;
@@ -30,6 +31,7 @@ import java.util.function.BooleanSupplier;
 public class ParallelProcessor {
 
     private static final Logger LOGGER = LogManager.getLogger();
+    private static GeneralConfig config;
 
     static Phaser p;
     static ExecutorService ex;
@@ -48,6 +50,7 @@ public class ParallelProcessor {
             return fjwt;
         };
         ex = new ForkJoinPool(parallelism, fjpf, null, true);
+        config = AutoConfig.getConfigHolder(GeneralConfig.class).getConfig();
     }
 
     /**
@@ -55,7 +58,7 @@ public class ParallelProcessor {
      */
     static {
         // Must be static here due to class loading shenanagins
-        setupThreadPool(4);
+//        setupThreadPool(4);
     }
 
     static Map<String, Set<Thread>> mcThreadTracker = new ConcurrentHashMap<String, Set<Thread>>();
@@ -94,7 +97,7 @@ public class ParallelProcessor {
     }
 
     public static void callTick(ServerWorld serverworld, BooleanSupplier hasTimeLeft, MinecraftServer server) {
-        if (GeneralConfig.disabled || GeneralConfig.disableWorld) {
+        if (config.disabled || config.disableWorld) {
             try {
                 serverworld.tick(hasTimeLeft);
             } catch (Exception e) {
@@ -104,12 +107,12 @@ public class ParallelProcessor {
         }
         if (mcs != server) {
             LOGGER.warn("Multiple servers?");
-            GeneralConfig.disabled = true;
+            config.disabled = true;
             serverworld.tick(hasTimeLeft);
             return;
         } else {
             String taskName = null;
-            if (GeneralConfig.opsTracing) {
+            if (config.opsTracing) {
                 taskName = "WorldTick: " + serverworld.toString() + "@" + serverworld.hashCode();
                 currentTasks.add(taskName);
             }
@@ -122,7 +125,7 @@ public class ParallelProcessor {
                 } finally {
                     p.arriveAndDeregister();
                     currentWorlds.decrementAndGet();
-                    if (GeneralConfig.opsTracing) currentTasks.remove(finalTaskName);
+                    if (config.opsTracing) currentTasks.remove(finalTaskName);
                 }
             });
         }
@@ -142,12 +145,12 @@ public class ParallelProcessor {
 
 
     public static void callEntityTick(Entity entityIn) {
-        if (GeneralConfig.disabled || GeneralConfig.disableEntity) {
+        if (config.disabled || config.disableEntity) {
             entityIn.tick();
             return;
         }
         String taskName = null;
-        if (GeneralConfig.opsTracing) {
+        if (config.opsTracing) {
             taskName = "EntityTick: " + entityIn.toString() + "@" + entityIn.hashCode();
             currentTasks.add(taskName);
         }
@@ -160,18 +163,18 @@ public class ParallelProcessor {
             } finally {
                 currentEnts.decrementAndGet();
                 p.arriveAndDeregister();
-                if (GeneralConfig.opsTracing) currentTasks.remove(finalTaskName);
+                if (config.opsTracing) currentTasks.remove(finalTaskName);
             }
         });
     }
 
     public static void callTickChunks(ServerWorld world, WorldChunk chunk, int k) {
-        if (GeneralConfig.disabled || GeneralConfig.disableEnvironment) {
+        if (config.disabled || config.disableEnvironment) {
             world.tickChunk(chunk, k);
             return;
         }
         String taskName = null;
-        if (GeneralConfig.opsTracing) {
+        if (config.opsTracing) {
             taskName = "EnvTick: " + chunk.toString() + "@" + chunk.hashCode();
             currentTasks.add(taskName);
         }
@@ -184,7 +187,7 @@ public class ParallelProcessor {
             } finally {
                 currentEnvs.decrementAndGet();
                 p.arriveAndDeregister();
-                if (GeneralConfig.opsTracing) currentTasks.remove(finalTaskName);
+                if (config.opsTracing) currentTasks.remove(finalTaskName);
             }
         });
     }
@@ -195,7 +198,7 @@ public class ParallelProcessor {
             isLocking = true;
         }
         // Apparently a string starts with check is faster than Class.getPackage; who knew (I didn't)
-        if (!isLocking && GeneralConfig.chunkLockModded && !tte.getClass().getName().startsWith("net.minecraft.block.entity")) {
+        if (!isLocking && config.chunkLockModded && !tte.getClass().getName().startsWith("net.minecraft.block.entity")) {
             isLocking = true;
         }
         if (isLocking && BlockEntityLists.teWhiteList.contains(tte.getClass())) {
@@ -208,12 +211,12 @@ public class ParallelProcessor {
     }
 
     public static void callTileEntityTick(BlockEntityTickInvoker tte, World world) {
-        if (GeneralConfig.disabled || GeneralConfig.disableTileEntity || !(world instanceof ServerWorld)) {
+        if (config.disabled || config.disableTileEntity || !(world instanceof ServerWorld)) {
             tte.tick();
             return;
         }
         String taskName = null;
-        if (GeneralConfig.opsTracing) {
+        if (config.opsTracing) {
             taskName = "TETick: " + tte.toString() + "@" + tte.hashCode();
             currentTasks.add(taskName);
         }
@@ -241,7 +244,7 @@ public class ParallelProcessor {
             } finally {
                 currentTEs.decrementAndGet();
                 p.arriveAndDeregister();
-                if (GeneralConfig.opsTracing) currentTasks.remove(finalTaskName);
+                if (config.opsTracing) currentTasks.remove(finalTaskName);
             }
         });
     }

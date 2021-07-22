@@ -1,5 +1,6 @@
 package net.himeki.mcmtfabric.config;
 
+import me.shedaniel.autoconfig.AutoConfig;
 import me.shedaniel.autoconfig.ConfigData;
 import me.shedaniel.autoconfig.annotation.Config;
 import me.shedaniel.autoconfig.annotation.ConfigEntry;
@@ -15,12 +16,12 @@ public class GeneralConfig implements ConfigData {
 
     // General
     @Comment("Globally disable all toggleable functionality")
-    public static boolean disabled = false;
+    public boolean disabled = false;
 
     // Parallelism
     @Comment("Thread count config; In standard mode: will never create more threads than there are CPU threads (as that causeses Context switch churning)\n" +
             "Values <=1 are treated as 'all cores'")
-    public static int paraMax = -1;
+    public int paraMax = -1;
 
     @Comment("""
             Other modes for paraMax
@@ -28,71 +29,71 @@ public class GeneralConfig implements ConfigData {
             Reduction: Parallelism becomes Math.max(CoreCount-paramax, 2), if paramax is set to be -1, it's treated as 0
             Todo: add more"""
     )
-    public static ParaMaxMode paraMaxMode = ParaMaxMode.Standard;
+    public ParaMaxMode paraMaxMode = ParaMaxMode.Standard;
 
     // World
     @Comment("Disable world parallelisation")
-    public static boolean disableWorld = false;
+    public boolean disableWorld = false;
 
     @Comment("Disable world post tick parallelisation")
-    public static boolean disableWorldPostTick = false;
+    public boolean disableWorldPostTick = false;
 
     // Entity
     @Comment("Disable entity parallelisation")
-    public static boolean disableEntity = false;
+    public boolean disableEntity = false;
 
     // TE
     @Comment("Disable tile entity parallelisation")
-    public static boolean disableTileEntity = false;
+    public boolean disableTileEntity = false;
 
     @Comment("Use chunklocks for any unknown (i.e. modded) tile entities\n"
             + "Chunklocking means we prevent multiple tile entities a 1 chunk radius of each other being ticked to limit concurrency impacts")
-    public static boolean chunkLockModded = true;
+    public boolean chunkLockModded = true;
 
     @Comment("""
             List of tile entity classes that will always be fully parallelised
             This will occur even when chunkLockModded is set to true
             Adding pistons to this will not parallelise them"""
     )
-    public static List<String> teWhiteListString = new ArrayList<>();
+    public List<String> teWhiteListString = new ArrayList<>();
 
     @Comment("List of tile entity classes that will always be chunklocked\n"
             + "This will occur even when chunkLockModded is set to false")
-    public static List<String> teBlackListString = new ArrayList<>();
+    public List<String> teBlackListString = new ArrayList<>();
 
     // Any TE class strings that aren't available in the current environment
     // We use classes for the main operation as class-class comparisons are memhash based
     // So (should) be MUCH faster than string-string comparisons
     @ConfigEntry.Gui.Excluded
-    public static List<String> teUnfoundWhiteList = new ArrayList<>();
+    public List<String> teUnfoundWhiteList = new ArrayList<>();
     @ConfigEntry.Gui.Excluded
-    public static List<String> teUnfoundBlackList = new ArrayList<>();
+    public List<String> teUnfoundBlackList = new ArrayList<>();
 
     // Misc
     @Comment("Disable environment (plant ticks, etc.) parallelisation")
-    public static boolean disableEnvironment = false;
+    public boolean disableEnvironment = false;
 
     @Comment("Disable parallelised chunk caching; doing this will result in much lower performance with little to no gain")
-    public static boolean disableChunkProvider = false;
+    public boolean disableChunkProvider = false;
 
     //Debug
     @Comment("Enable chunk loading timeouts; this will forcibly kill any chunks that fail to load in sufficient time\n"
             + "May allow for loading of damaged/corrupted worlds")
-    public static boolean enableChunkTimeout = false;
+    public boolean enableChunkTimeout = false;
 
     @Comment("Attempts to re-load timed out chunks; Seems to work")
-    public static boolean enableTimeoutRegen = false;
+    public boolean enableTimeoutRegen = false;
 
     @Comment("Amount of workless iterations to wait before declaring a chunk load attempt as timed out\n"
             + "This is in ~100us iterations (plus minus yield time) so timeout >= timeoutCount * 100us")
-    public static int timeoutCount = 5000;
+    public int timeoutCount = 5000;
 
     // More Debug
     @Comment("Enable ops tracing; this will probably have a performance impact, but allows for better debugging")
-    public static boolean opsTracing = false;
+    public boolean opsTracing = false;
 
     @Comment("Maximum time between MCMT presence alerts in 10ms steps")
-    public static int logCap = 720000;
+    public int logCap = 720000;
 
 
     public enum ParaMaxMode {
@@ -115,25 +116,26 @@ public class GeneralConfig implements ConfigData {
     }
 
     public static int getParallelism() {
-        switch (GeneralConfig.paraMaxMode) {
+        GeneralConfig config = AutoConfig.getConfigHolder(GeneralConfig.class).getConfig();
+        switch (config.paraMaxMode) {
             case Standard:
-                return GeneralConfig.paraMax <= 1 ?
+                return config.paraMax <= 1 ?
                         Runtime.getRuntime().availableProcessors() :
-                        Math.max(2, Math.min(Runtime.getRuntime().availableProcessors(), GeneralConfig.paraMax));
+                        Math.max(2, Math.min(Runtime.getRuntime().availableProcessors(), config.paraMax));
             case Override:
-                return GeneralConfig.paraMax <= 1 ?
+                return config.paraMax <= 1 ?
                         Runtime.getRuntime().availableProcessors() :
-                        Math.max(2, GeneralConfig.paraMax);
+                        Math.max(2, config.paraMax);
             case Reduction:
                 return Math.max(
-                        Runtime.getRuntime().availableProcessors() - Math.max(0, GeneralConfig.paraMax),
+                        Runtime.getRuntime().availableProcessors() - Math.max(0, config.paraMax),
                         2);
         }
         // Unsure quite how this is "Reachable code" but ok I guess
         return Runtime.getRuntime().availableProcessors();
     }
 
-    public GeneralConfig() {
+    public void loadTELists() {
         teWhiteListString.forEach(str -> {
             Class<?> c = null;
             try {
