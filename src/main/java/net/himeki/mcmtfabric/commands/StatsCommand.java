@@ -2,6 +2,7 @@ package net.himeki.mcmtfabric.commands;
 
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import me.shedaniel.autoconfig.AutoConfig;
+import net.himeki.mcmtfabric.MCMT;
 import net.himeki.mcmtfabric.ParallelProcessor;
 import net.himeki.mcmtfabric.config.GeneralConfig;
 import net.minecraft.server.MinecraftServer;
@@ -17,9 +18,8 @@ import java.util.Date;
 import static net.minecraft.server.command.CommandManager.literal;
 
 public class StatsCommand {
-    private static GeneralConfig config;
+    private static GeneralConfig config = MCMT.config;
     public static LiteralArgumentBuilder<ServerCommandSource> registerStatus(LiteralArgumentBuilder<ServerCommandSource> root) {
-        config = AutoConfig.getConfigHolder(GeneralConfig.class).getConfig();
         return root.then(literal("stats").then(literal("reset").executes(cmdCtx -> {
             resetAll();
             return 1;

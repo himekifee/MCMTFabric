@@ -14,6 +14,7 @@ import org.apache.logging.log4j.Logger;
 
 public class MCMT implements ModInitializer {
     private static final Logger LOGGER = LogManager.getLogger();
+    public static GeneralConfig config;
 
     @Override
     public void onInitialize() {
@@ -27,6 +28,7 @@ public class MCMT implements ModInitializer {
             return ActionResult.SUCCESS;
         });
         holder.load();  // Load again to run loadTELists() handler
+        config= holder.getConfig();
 
 
         StatsCommand.runDataThread();

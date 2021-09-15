@@ -5,6 +5,7 @@ import com.mojang.brigadier.builder.ArgumentBuilder;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import me.shedaniel.autoconfig.AutoConfig;
+import net.himeki.mcmtfabric.MCMT;
 import net.himeki.mcmtfabric.ParallelProcessor;
 import net.himeki.mcmtfabric.config.BlockEntityLists;
 import net.himeki.mcmtfabric.config.GeneralConfig;
@@ -20,14 +21,13 @@ import net.minecraft.world.chunk.BlockEntityTickInvoker;
 import static net.minecraft.server.command.CommandManager.literal;
 
 public class ConfigCommand {
-    private static GeneralConfig config;
+    private static GeneralConfig config = MCMT.config;
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
         LiteralArgumentBuilder<ServerCommandSource> mcmtconfig = literal("mcmt");
         mcmtconfig = mcmtconfig.then(registerConfig(literal("config")));
         mcmtconfig = mcmtconfig.then(DebugCommand.registerDebug(literal("debug")));
         mcmtconfig = StatsCommand.registerStatus(mcmtconfig);
         dispatcher.register(mcmtconfig);
-        config = AutoConfig.getConfigHolder(GeneralConfig.class).getConfig();
     }
 
     public static ArgumentBuilder<ServerCommandSource, ?> registerConfig(LiteralArgumentBuilder<ServerCommandSource> root) {

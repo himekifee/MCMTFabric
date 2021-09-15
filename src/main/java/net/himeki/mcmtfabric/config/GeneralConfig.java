@@ -5,6 +5,7 @@ import me.shedaniel.autoconfig.ConfigData;
 import me.shedaniel.autoconfig.annotation.Config;
 import me.shedaniel.autoconfig.annotation.ConfigEntry;
 import me.shedaniel.cloth.clothconfig.shadowed.blue.endless.jankson.Comment;
+import net.himeki.mcmtfabric.MCMT;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -116,7 +117,7 @@ public class GeneralConfig implements ConfigData {
     }
 
     public static int getParallelism() {
-        GeneralConfig config = AutoConfig.getConfigHolder(GeneralConfig.class).getConfig();
+        GeneralConfig config = MCMT.config;
         switch (config.paraMaxMode) {
             case Standard:
                 return config.paraMax <= 1 ?

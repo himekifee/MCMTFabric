@@ -2,6 +2,7 @@ package net.himeki.mcmtfabric.parallelised;
 
 import com.mojang.datafixers.DataFixer;
 import me.shedaniel.autoconfig.AutoConfig;
+import net.himeki.mcmtfabric.MCMT;
 import net.himeki.mcmtfabric.ParallelProcessor;
 import net.himeki.mcmtfabric.config.GeneralConfig;
 import net.minecraft.server.WorldGenerationProgressListener;
@@ -48,7 +49,7 @@ public class ParaServerChunkProvider extends ServerChunkManager {
     Logger log = LogManager.getLogger();
     Marker chunkCleaner = MarkerManager.getMarker("ChunkCleaner");
     private final World world;
-    private static GeneralConfig config;
+    private static GeneralConfig config = MCMT.config;
 
     /* 1.16.1 code; AKA the only thing that changed  */
     public ParaServerChunkProvider(ServerWorld serverWorld, LevelStorage.Session session, DataFixer dataFixer, StructureManager structureManager, Executor workerExecutor, ChunkGenerator chunkGenerator, int viewDistance, boolean bl, WorldGenerationProgressListener worldGenerationProgressListener, ChunkStatusChangeListener chunkStatusChangeListener, Supplier<PersistentStateManager> supplier) {
@@ -56,7 +57,6 @@ public class ParaServerChunkProvider extends ServerChunkManager {
         world = serverWorld;
         cacheThread = new Thread(this::chunkCacheCleanup, "Chunk Cache Cleaner " + serverWorld.getRegistryKey().getValue().getPath());
         cacheThread.start();
-        config = AutoConfig.getConfigHolder(GeneralConfig.class).getConfig();
     }
     /* */
 

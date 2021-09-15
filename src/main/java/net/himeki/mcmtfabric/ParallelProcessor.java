@@ -4,6 +4,10 @@ import me.shedaniel.autoconfig.AutoConfig;
 import net.himeki.mcmtfabric.config.BlockEntityLists;
 import net.himeki.mcmtfabric.config.GeneralConfig;
 import net.himeki.mcmtfabric.parallelised.ChunkLock;
+import net.himeki.mcmtfabric.serdes.SerDesHookTypes;
+import net.himeki.mcmtfabric.serdes.SerDesRegistry;
+import net.himeki.mcmtfabric.serdes.filter.ISerDesFilter;
+import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.block.entity.PistonBlockEntity;
 import net.minecraft.entity.Entity;
 import net.minecraft.network.packet.s2c.play.BlockEventS2CPacket;
@@ -31,7 +35,7 @@ import java.util.function.BooleanSupplier;
 public class ParallelProcessor {
 
     private static final Logger LOGGER = LogManager.getLogger();
-    private static GeneralConfig config;
+    private static final GeneralConfig config = MCMT.config;
 
     static Phaser p;
     static ExecutorService ex;
@@ -50,7 +54,6 @@ public class ParallelProcessor {
             return fjwt;
         };
         ex = new ForkJoinPool(parallelism, fjpf, null, true);
-        config = AutoConfig.getConfigHolder(GeneralConfig.class).getConfig();
     }
 
     /**
@@ -144,7 +147,7 @@ public class ParallelProcessor {
     }
 
 
-    public static void callEntityTick(Entity entityIn) {
+    public static void callEntityTick(Entity entityIn, ServerWorld serverworld) {
         if (config.disabled || config.disableEntity) {
             entityIn.tick();
             return;
@@ -158,8 +161,13 @@ public class ParallelProcessor {
         p.register();
         ex.execute(() -> {
             try {
-                currentEnts.incrementAndGet();
-                entityIn.tick();
+                final ISerDesFilter filter = SerDesRegistry.getFilter(SerDesHookTypes.EntityTick, entityIn.getClass());
+                currentTEs.incrementAndGet();
+                if (filter != null) {
+                    filter.serialise(entityIn::tick, entityIn, entityIn.getBlockPos(), serverworld, SerDesHookTypes.EntityTick);
+                } else {
+                    entityIn.tick();
+                }
             } finally {
                 currentEnts.decrementAndGet();
                 p.arriveAndDeregister();
@@ -224,16 +232,11 @@ public class ParallelProcessor {
         p.register();
         ex.execute(() -> {
             try {
-                final boolean doLock = filterTE(tte);
-                if (doLock) {
-                    BlockPos bp = tte.getPos();
-                    long[] locks = ChunkLock.lock(bp, 1);
-                    try {
-                        currentTEs.incrementAndGet();
-                        tte.tick();
-                    } finally {
-                        ChunkLock.unlock(locks);
-                    }
+//                final boolean doLock = filterTE(tte);
+                final ISerDesFilter filter = SerDesRegistry.getFilter(SerDesHookTypes.TETick, tte.getClass());
+                currentTEs.incrementAndGet();
+                if (filter != null) {
+                    filter.serialise(tte::tick, tte, ((BlockEntity) tte).getPos(), world, SerDesHookTypes.TETick);
                 } else {
                     currentTEs.incrementAndGet();
                     tte.tick();

@@ -58,7 +58,7 @@ public abstract class ServerWorldMixin extends World implements StructureWorldAc
 
     @Redirect(method = "tickEntity", at = @At(value = "INVOKE", target = "Lnet/minecraft/entity/Entity;tick()V"))
     private void overwriteEntityTicking(Entity entity) {
-        ParallelProcessor.callEntityTick(entity);
+        ParallelProcessor.callEntityTick(entity, (ServerWorld) (Object) this);
     }
 
     @Redirect(method = "addSyncedBlockEvent", at = @At(value = "INVOKE", target = "Lit/unimi/dsi/fastutil/objects/ObjectLinkedOpenHashSet;add(Ljava/lang/Object;)Z"))
