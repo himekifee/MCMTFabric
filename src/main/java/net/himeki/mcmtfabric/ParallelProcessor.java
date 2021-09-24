@@ -61,7 +61,7 @@ public class ParallelProcessor {
      */
     static {
         // Must be static here due to class loading shenanagins
-//        setupThreadPool(4);
+        // setupThreadPool(4);
     }
 
     static Map<String, Set<Thread>> mcThreadTracker = new ConcurrentHashMap<String, Set<Thread>>();
@@ -154,7 +154,7 @@ public class ParallelProcessor {
         }
         String taskName = null;
         if (config.opsTracing) {
-            taskName = "EntityTick: " + entityIn.toString() + "@" + entityIn.hashCode();
+            taskName = "EntityTick: " + /*entityIn.toString() + KG: Wayyy too slow. Maybe for debug but needs to be done via flag in that circumstance */ "@" + entityIn.hashCode();
             currentTasks.add(taskName);
         }
         String finalTaskName = taskName;
