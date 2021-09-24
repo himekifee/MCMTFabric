@@ -23,13 +23,12 @@ import org.apache.logging.log4j.MarkerManager;
 
 import javax.annotation.Nullable;
 import java.lang.ref.WeakReference;
-import java.util.Map;
-import java.util.Map.Entry;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
+
 
 /* 1.16.1 code; AKA the only thing that changed  */
 //import net.minecraft.world.storage.SaveFormat.LevelSave;
@@ -41,9 +40,15 @@ import java.io.File;
 
 public class ParaServerChunkProvider extends ServerChunkManager {
 
-    protected Map<ChunkCacheAddress, ChunkCacheLine> chunkCache = new ConcurrentHashMap<ChunkCacheAddress, ChunkCacheLine>();
+    protected ConcurrentHashMap<ChunkCacheAddress, ChunkCacheLine> chunkCache = new ConcurrentHashMap<ChunkCacheAddress, ChunkCacheLine>();
     protected AtomicInteger access = new AtomicInteger(Integer.MIN_VALUE);
-    protected static final int CACHE_SIZE = 512;
+    
+    private static final int CACHE_DURATION_INTERVAL = 50; // ms, multiplies CACHE_DURATION
+    protected static final int CACHE_DURATION = 200; // Duration in ticks (ish...-- 50ms) for cached chucks to live
+    
+    private static final int HASH_PRIME = 16777619;
+    private static final int HASH_INIT = 0x811c9dc5;
+    
     protected Thread cacheThread;
     Logger log = LogManager.getLogger();
     Marker chunkCleaner = MarkerManager.getMarker("ChunkCleaner");
@@ -58,6 +63,16 @@ public class ParaServerChunkProvider extends ServerChunkManager {
         cacheThread.start();
         config = AutoConfig.getConfigHolder(GeneralConfig.class).getConfig();
     }
+    
+    @SuppressWarnings("unused")
+    private Chunk getChunkyThing(long chunkPos, ChunkStatus requiredStatus, boolean load) {
+        Chunk cl;
+        synchronized (this) {
+            cl = super.getChunk(ChunkPos.getPackedX(chunkPos), ChunkPos.getPackedZ(chunkPos), requiredStatus, load);
+        }
+        return cl;
+    }
+    
     /* */
 
 	/* 1.15.2 code; AKA the only thing that changed
@@ -74,13 +89,10 @@ public class ParaServerChunkProvider extends ServerChunkManager {
     @Override
     @Nullable
     public Chunk getChunk(int chunkX, int chunkZ, ChunkStatus requiredStatus, boolean load) {
-        if (config.disabled || config.disableChunkProvider) {
-            if (ParallelProcessor.isThreadPooled("Main", Thread.currentThread())) {
-                return CompletableFuture.supplyAsync(() -> {
-                    return this.getChunk(chunkX, chunkZ, requiredStatus, load);
-                }, this.mainThreadExecutor).join();
+        if (config.disabled || config.disableChunkProvider || (requiredStatus != ChunkStatus.FULL && requiredStatus != ChunkStatus.BIOMES && requiredStatus != ChunkStatus.STRUCTURE_REFERENCES)) {
+            synchronized (this) {
+            	return super.getChunk(chunkX, chunkZ, requiredStatus, load);
             }
-            return super.getChunk(chunkX, chunkZ, requiredStatus, load);
         }
 
         if (ParallelProcessor.isThreadPooled("Main", Thread.currentThread())) {
@@ -89,37 +101,24 @@ public class ParaServerChunkProvider extends ServerChunkManager {
             }, this.mainThreadExecutor).join();
         }
 
-        long i = ChunkPos.toLong(chunkX, chunkZ);
-
-        Chunk c = lookupChunk(i, requiredStatus, false);
-        if (c != null) {
-            return c;
+        Chunk chunk = lookupChunk(ChunkPos.toLong(chunkX, chunkZ), requiredStatus, false);
+        if (chunk == null) {
+        	synchronized (this) {
+        		if ((chunk = lookupChunk(ChunkPos.toLong(chunkX, chunkZ), requiredStatus, false)) != null) return chunk; // Check if another thread already loaded this chunk at the same time
+                chunk = super.getChunk(chunkX, chunkZ, requiredStatus, load);
+            }
+            cacheChunk(ChunkPos.toLong(chunkX, chunkZ), chunk, requiredStatus);
         }
-
-        //log.debug("Missed chunk " + i + " on status "  + requiredStatus.toString());
-
-        Chunk cl;
-        synchronized (this) {
-            cl = super.getChunk(chunkX, chunkZ, requiredStatus, load);
+        if (chunk == null) {
+        	log.warn("Failed to aquire chunk: " + chunkX + ", " + chunkZ + " - " + requiredStatus);
         }
-        cacheChunk(i, cl, requiredStatus);
-        return cl;
-    }
-
-    @SuppressWarnings("unused")
-    private Chunk getChunkyThing(long chunkPos, ChunkStatus requiredStatus, boolean load) {
-        Chunk cl;
-        synchronized (this) {
-            cl = super.getChunk(ChunkPos.getPackedX(chunkPos), ChunkPos.getPackedZ(chunkPos), requiredStatus, load);
-        }
-        return cl;
+        return chunk;
     }
 
     public Chunk lookupChunk(long chunkPos, ChunkStatus status, boolean compute) {
         int oldAccess = access.getAndIncrement();
-        if (access.get() < oldAccess) {
-            // Long Rollover so super rare
-            chunkCache.clear();
+        if (access.get() < oldAccess) { // overflow
+        	clearCache();
             return null;
         }
         ChunkCacheLine ccl;
@@ -134,10 +133,10 @@ public class ParaServerChunkProvider extends ServerChunkManager {
 
     public void cacheChunk(long chunkPos, Chunk chunk, ChunkStatus status) {
         long oldAccess = access.getAndIncrement();
-        if (access.get() < oldAccess) {
-            // Long Rollover so super rare
-            chunkCache.clear();
+        if (access.get() < oldAccess) { // overflow
+        	clearCache();
         }
+        
         ChunkCacheLine ccl;
         if ((ccl = chunkCache.get(new ChunkCacheAddress(chunkPos, status))) != null) {
             ccl.updateLastAccess();
@@ -158,51 +157,53 @@ public class ParaServerChunkProvider extends ServerChunkManager {
         }
         while (world.getServer().isRunning()) {
             try {
-                Thread.sleep(50);
+                Thread.sleep(CACHE_DURATION_INTERVAL * CACHE_DURATION);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
-            int size = chunkCache.size();
-            if (size < CACHE_SIZE)
-                continue;
-            // System.out.println("CacheFill: " + size);
-            long maxAccess = chunkCache.values().stream().mapToInt(ccl -> ccl.lastAccess).max().orElseGet(() -> access.get());
-            long minAccess = chunkCache.values().stream().mapToInt(ccl -> ccl.lastAccess).min()
-                    .orElseGet(() -> Integer.MIN_VALUE);
-            long cutoff = minAccess + (long) ((maxAccess - minAccess) / ((float) size / ((float) CACHE_SIZE)));
-            for (Entry<ChunkCacheAddress, ChunkCacheLine> l : chunkCache.entrySet()) {
-                if (l.getValue().getLastAccess() < cutoff | l.getValue().getChunk() == null) {
-                    chunkCache.remove(l.getKey());
-                }
-            }
+            
+        	clearCache();
         }
         log.debug(chunkCleaner, "ChunkCleaner terminating");
     }
+    
+    public void clearCache() {
+    	//log.info("Clearing Chunk Cache; Size: " + chunkCache.size());
+        chunkCache.clear(); // Doesn't resize but that's typically good
+    }
+    
+     protected class ChunkCacheAddress {
+        protected long chunk_pos;
+        protected int status;
+        protected int hash;
 
-    protected class ChunkCacheAddress {
-
-        protected long chunk;
-        protected ChunkStatus status;
-
-        public ChunkCacheAddress(long chunk, ChunkStatus status) {
+        public ChunkCacheAddress(long chunk_pos, ChunkStatus status) {
             super();
-            this.chunk = chunk;
-            this.status = status;
+            this.chunk_pos = chunk_pos;
+            this.status = status.getIndex();
+            this.hash = makeHash(this.chunk_pos, this.status);
         }
 
         @Override
         public int hashCode() {
-            return Long.hashCode(chunk) ^ status.hashCode();
+        	return hash;
         }
 
         @Override
         public boolean equals(Object obj) {
-            if (obj instanceof ChunkCacheAddress) {
-                if ((((ChunkCacheAddress) obj).chunk == chunk) && (((ChunkCacheAddress) obj).status.equals(status))) {
-                    return true;
-                }
-            }
-            return false;
+        	return (obj instanceof ChunkCacheAddress)
+        			&& ((ChunkCacheAddress) obj).status == this.status
+        			&& ((ChunkCacheAddress) obj).chunk_pos == this.chunk_pos;
+        }
+        
+        public int makeHash(long chunk_pos, int status) {
+        	int hash = HASH_INIT;
+        	hash ^= status;
+        	for (int b = 56; b >= 0; b -= 8) {
+        		hash ^= (chunk_pos >> b) & 0xff;
+        		hash *= HASH_PRIME;
+        	}
+        	return hash;
         }
     }
 
