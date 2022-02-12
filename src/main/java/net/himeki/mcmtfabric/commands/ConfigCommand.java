@@ -21,7 +21,6 @@ import net.minecraft.world.chunk.BlockEntityTickInvoker;
 import static net.minecraft.server.command.CommandManager.literal;
 
 public class ConfigCommand {
-    private static GeneralConfig config = MCMT.config;
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
         LiteralArgumentBuilder<ServerCommandSource> mcmtconfig = literal("mcmt");
         mcmtconfig = mcmtconfig.then(registerConfig(literal("config")));
@@ -31,6 +30,7 @@ public class ConfigCommand {
     }
 
     public static ArgumentBuilder<ServerCommandSource, ?> registerConfig(LiteralArgumentBuilder<ServerCommandSource> root) {
+        GeneralConfig config = MCMT.config;
         return root.then(literal("toggle").requires(cmdSrc -> {
             return cmdSrc.hasPermissionLevel(2);
         }).executes(cmdCtx -> {

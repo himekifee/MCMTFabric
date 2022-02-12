@@ -18,7 +18,6 @@ import java.util.Date;
 import static net.minecraft.server.command.CommandManager.literal;
 
 public class StatsCommand {
-    private static GeneralConfig config = MCMT.config;
     public static LiteralArgumentBuilder<ServerCommandSource> registerStatus(LiteralArgumentBuilder<ServerCommandSource> root) {
         return root.then(literal("stats").then(literal("reset").executes(cmdCtx -> {
             resetAll();
@@ -116,6 +115,7 @@ public class StatsCommand {
     }
 
     public static void runDataThread() {
+        GeneralConfig config = MCMT.config;
         statsThread = new Thread(() -> {
             while (true) {
                 try {

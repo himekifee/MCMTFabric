@@ -49,7 +49,6 @@ public class ParaServerChunkProvider extends ServerChunkManager {
     Logger log = LogManager.getLogger();
     Marker chunkCleaner = MarkerManager.getMarker("ChunkCleaner");
     private final World world;
-    private static GeneralConfig config = MCMT.config;
 
     /* 1.16.1 code; AKA the only thing that changed  */
     public ParaServerChunkProvider(ServerWorld serverWorld, LevelStorage.Session session, DataFixer dataFixer, StructureManager structureManager, Executor workerExecutor, ChunkGenerator chunkGenerator, int viewDistance, boolean bl, WorldGenerationProgressListener worldGenerationProgressListener, ChunkStatusChangeListener chunkStatusChangeListener, Supplier<PersistentStateManager> supplier) {
@@ -74,6 +73,7 @@ public class ParaServerChunkProvider extends ServerChunkManager {
     @Override
     @Nullable
     public Chunk getChunk(int chunkX, int chunkZ, ChunkStatus requiredStatus, boolean load) {
+        GeneralConfig config = MCMT.config;
         if (config.disabled || config.disableChunkProvider) {
             if (ParallelProcessor.isThreadPooled("Main", Thread.currentThread())) {
                 return CompletableFuture.supplyAsync(() -> {

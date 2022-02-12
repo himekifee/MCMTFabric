@@ -1,9 +1,7 @@
 package net.himeki.mcmtfabric;
 
-import me.shedaniel.autoconfig.AutoConfig;
 import net.himeki.mcmtfabric.config.BlockEntityLists;
 import net.himeki.mcmtfabric.config.GeneralConfig;
-import net.himeki.mcmtfabric.parallelised.ChunkLock;
 import net.himeki.mcmtfabric.serdes.SerDesHookTypes;
 import net.himeki.mcmtfabric.serdes.SerDesRegistry;
 import net.himeki.mcmtfabric.serdes.filter.ISerDesFilter;
@@ -15,7 +13,6 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.world.BlockEvent;
 import net.minecraft.server.world.ServerTickScheduler;
 import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.ScheduledTick;
 import net.minecraft.world.World;
 import net.minecraft.world.chunk.BlockEntityTickInvoker;
@@ -35,7 +32,6 @@ import java.util.function.BooleanSupplier;
 public class ParallelProcessor {
 
     private static final Logger LOGGER = LogManager.getLogger();
-    private static final GeneralConfig config = MCMT.config;
 
     static Phaser p;
     static ExecutorService ex;
@@ -100,6 +96,7 @@ public class ParallelProcessor {
     }
 
     public static void callTick(ServerWorld serverworld, BooleanSupplier hasTimeLeft, MinecraftServer server) {
+        GeneralConfig config = MCMT.config;
         if (config.disabled || config.disableWorld) {
             try {
                 serverworld.tick(hasTimeLeft);
@@ -148,6 +145,7 @@ public class ParallelProcessor {
 
 
     public static void callEntityTick(Entity entityIn, ServerWorld serverworld) {
+        GeneralConfig config = MCMT.config;
         if (config.disabled || config.disableEntity) {
             entityIn.tick();
             return;
@@ -177,6 +175,7 @@ public class ParallelProcessor {
     }
 
     public static void callTickChunks(ServerWorld world, WorldChunk chunk, int k) {
+        GeneralConfig config = MCMT.config;
         if (config.disabled || config.disableEnvironment) {
             world.tickChunk(chunk, k);
             return;
@@ -201,6 +200,7 @@ public class ParallelProcessor {
     }
 
     public static boolean filterTE(BlockEntityTickInvoker tte) {
+        GeneralConfig config = MCMT.config;
         boolean isLocking = false;
         if (BlockEntityLists.teBlackList.contains(tte.getClass())) {
             isLocking = true;
@@ -219,6 +219,7 @@ public class ParallelProcessor {
     }
 
     public static void callTileEntityTick(BlockEntityTickInvoker tte, World world) {
+        GeneralConfig config = MCMT.config;
         if (config.disabled || config.disableTileEntity || !(world instanceof ServerWorld)) {
             tte.tick();
             return;
@@ -236,7 +237,7 @@ public class ParallelProcessor {
                 final ISerDesFilter filter = SerDesRegistry.getFilter(SerDesHookTypes.TETick, tte.getClass());
                 currentTEs.incrementAndGet();
                 if (filter != null) {
-                    filter.serialise(tte::tick, tte, ((BlockEntity) tte).getPos(), world, SerDesHookTypes.TETick);
+                    filter.serialise(tte::tick, tte, tte.getPos(), world, SerDesHookTypes.TETick);
                 } else {
                     currentTEs.incrementAndGet();
                     tte.tick();
