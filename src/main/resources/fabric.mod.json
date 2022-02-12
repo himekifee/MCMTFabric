@@ -15,7 +15,7 @@
   "icon": "assets/mcmtfabric/mcmt.png",
   "environment": "*",
   "entrypoints": {
-    "gfh:prePreLaunch": [
+    "preLaunch": [
       "net.himeki.mcmtfabric.syncfu.SyncFuTransformer"
     ],
     "main": [
