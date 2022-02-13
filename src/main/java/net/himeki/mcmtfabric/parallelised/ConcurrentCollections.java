@@ -15,12 +15,12 @@ public class ConcurrentCollections {
     private static final Logger LOGGER = LogManager.getLogger();
 
     public static <T> Set<T> newHashSet() {
-        LOGGER.info("Concurrent hash set created");
+        //LOGGER.info("Concurrent hash set created");
         return Collections.newSetFromMap(new ConcurrentHashMap<T, Boolean>());
     }
 
     public static <T, U> Map<T, U> newHashMap() {
-        LOGGER.info("Concurrent hash map created");
+        //LOGGER.info("Concurrent hash map created");
         return new ConcurrentHashMap<T, U>();
     }
 
