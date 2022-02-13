@@ -57,10 +57,10 @@ public class ParaServerChunkProvider extends ServerChunkManager {
     private final World world;
 
     /* 1.16.1 code; AKA the only thing that changed  */
-    public ParaServerChunkProvider(ServerWorld serverWorld, LevelStorage.Session session, DataFixer dataFixer, StructureManager structureManager, Executor workerExecutor, ChunkGenerator chunkGenerator, int viewDistance, boolean bl, WorldGenerationProgressListener worldGenerationProgressListener, ChunkStatusChangeListener chunkStatusChangeListener, Supplier<PersistentStateManager> supplier) {
-        super(serverWorld,session,dataFixer,structureManager,workerExecutor,chunkGenerator,viewDistance,bl,worldGenerationProgressListener, chunkStatusChangeListener,supplier);
-        world = serverWorld;
-        cacheThread = new Thread(this::chunkCacheCleanup, "Chunk Cache Cleaner " + serverWorld.getRegistryKey().getValue().getPath());
+    public ParaServerChunkProvider(ServerWorld world, LevelStorage.Session session, DataFixer dataFixer, StructureManager structureManager, Executor workerExecutor, ChunkGenerator chunkGenerator, int viewDistance, int simulationDistance, boolean dsync, WorldGenerationProgressListener worldGenerationProgressListener, ChunkStatusChangeListener chunkStatusChangeListener, Supplier persistentStateManagerFactory) {
+        super(world,session,dataFixer,structureManager,workerExecutor,chunkGenerator,viewDistance,simulationDistance,dsync,worldGenerationProgressListener, chunkStatusChangeListener,persistentStateManagerFactory);
+        this.world = world;
+        cacheThread = new Thread(this::chunkCacheCleanup, "Chunk Cache Cleaner " + world.getRegistryKey().getValue().getPath());
         cacheThread.start();
     }
 

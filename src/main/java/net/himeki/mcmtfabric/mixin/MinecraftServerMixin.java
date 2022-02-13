@@ -7,7 +7,6 @@ import net.minecraft.server.ServerTask;
 import net.minecraft.server.command.CommandOutput;
 import net.minecraft.server.world.ServerChunkManager;
 import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.snooper.SnooperListener;
 import net.minecraft.util.thread.ReentrantThreadExecutor;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -19,7 +18,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import java.util.function.BooleanSupplier;
 
 @Mixin(MinecraftServer.class)
-public abstract class MinecraftServerMixin extends ReentrantThreadExecutor<ServerTask> implements SnooperListener, CommandOutput, AutoCloseable {
+public abstract class MinecraftServerMixin extends ReentrantThreadExecutor<ServerTask> implements CommandOutput, AutoCloseable {
     @Shadow
     public abstract ServerWorld getOverworld();
 
@@ -49,9 +48,10 @@ public abstract class MinecraftServerMixin extends ReentrantThreadExecutor<Serve
 
     @Redirect(method = "prepareStartRegion", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/world/ServerChunkManager;getTotalChunksLoadedCount()I"))
     private int initialChunkCountBypass(ServerChunkManager instance) {
-        if (!DebugHookTerminator.isBypassLoadTarget())
+        if (DebugHookTerminator.isBypassLoadTarget())
             return 441;
-        return this.getOverworld().getChunkManager().getLoadedChunkCount();
+        int loaded = this.getOverworld().getChunkManager().getLoadedChunkCount();
+        return Math.min(loaded, 441); // Maybe because multi loading caused overflow
     }
 
 }

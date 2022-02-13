@@ -9,6 +9,7 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import it.unimi.dsi.fastutil.longs.*;
 import org.apache.commons.lang3.ArrayUtils;
 
 import it.unimi.dsi.fastutil.bytes.ByteCollection;
@@ -18,16 +19,6 @@ import it.unimi.dsi.fastutil.ints.IntCollection;
 import it.unimi.dsi.fastutil.ints.IntIterator;
 import it.unimi.dsi.fastutil.ints.IntSet;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap.Entry;
-import it.unimi.dsi.fastutil.longs.Long2ByteMap;
-import it.unimi.dsi.fastutil.longs.Long2IntMap;
-import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
-import it.unimi.dsi.fastutil.longs.LongBidirectionalIterator;
-import it.unimi.dsi.fastutil.longs.LongCollection;
-import it.unimi.dsi.fastutil.longs.LongComparator;
-import it.unimi.dsi.fastutil.longs.LongIterator;
-import it.unimi.dsi.fastutil.longs.LongListIterator;
-import it.unimi.dsi.fastutil.longs.LongSet;
-import it.unimi.dsi.fastutil.longs.LongSortedSet;
 import it.unimi.dsi.fastutil.objects.ObjectCollection;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
 import it.unimi.dsi.fastutil.objects.ObjectSet;
@@ -412,6 +403,49 @@ public class FastUtilHackUtil {
         return entry;
     }
 
+    private static Long2LongMap.Entry longLongEntryForwards(Map.Entry<Long, Long> entry) {
+        return new Long2LongMap.Entry() {
+
+            @Override
+            public Long getValue() {
+                return entry.getValue();
+            }
+
+            @Override
+            public long setValue(long value) {
+                return entry.setValue(value);
+            }
+
+            @Override
+            public long getLongValue() {
+                return entry.getValue();
+            }
+
+            @Override
+            public long getLongKey() {
+                return entry.getKey();
+            }
+
+            @Override
+            public boolean equals(Object obj) {
+                if (obj == entry) {
+                    return true;
+                }
+                return super.equals(obj);
+            }
+
+            @Override
+            public int hashCode() {
+                return entry.hashCode();
+            }
+
+        };
+    }
+
+    private static <T> Map.Entry<Long, Long> longLongEntryBackwards(Long2LongMap.Entry entry) {
+        return entry;
+    }
+
     public static <T> ObjectSet<Int2ObjectMap.Entry<T>> entrySetIntWrap(Map<Integer, T> map) {
         return new ConvertingObjectSet<Map.Entry<Integer, T>, Int2ObjectMap.Entry<T>>(map.entrySet(), FastUtilHackUtil::intEntryForwards, FastUtilHackUtil::intEntryBackwards);
     }
@@ -426,6 +460,10 @@ public class FastUtilHackUtil {
 
     public static ObjectSet<Long2ByteMap.Entry> entrySetLongByteWrap(Map<Long, Byte> map) {
         return new ConvertingObjectSet<Map.Entry<Long, Byte>, Long2ByteMap.Entry>(map.entrySet(), FastUtilHackUtil::longByteEntryForwards, FastUtilHackUtil::longByteEntryBackwards);
+    }
+
+    public static ObjectSet<Long2LongMap.Entry> entrySetLongLongWrap(Map<Long, Long> map) {
+        return new ConvertingObjectSet<Map.Entry<Long, Long>, Long2LongMap.Entry>(map.entrySet(), FastUtilHackUtil::longLongEntryForwards, FastUtilHackUtil::longLongEntryBackwards);
     }
 
 
@@ -1196,6 +1234,125 @@ public class FastUtilHackUtil {
         return new WrappingIntCollection(c);
     }
 
+    public static class WrappingLongCollection implements LongCollection {
+
+        Collection<Long> backing;
+
+        public WrappingLongCollection(Collection<Long> backing) {
+            this.backing = backing;
+        }
+
+        @Override
+        public int size() {
+            return backing.size();
+        }
+
+        @Override
+        public boolean isEmpty() {
+            return backing.isEmpty();
+        }
+
+        @Override
+        public boolean contains(long o) {
+            return backing.contains(o);
+        }
+
+        @Override
+        public Object[] toArray() {
+            return backing.toArray();
+        }
+
+        @Override
+        public <T> T[] toArray(T[] a) {
+            return backing.toArray(a);
+        }
+
+        @Override
+        public boolean add(long e) {
+            return backing.add(e);
+        }
+
+        @Override
+        public boolean remove(Object o) {
+            return backing.remove(o);
+        }
+
+        @Override
+        public boolean containsAll(Collection<?> c) {
+            return backing.containsAll(c);
+        }
+
+        @Override
+        public boolean addAll(Collection<? extends Long> c) {
+            return backing.addAll(c);
+        }
+
+        @Override
+        public boolean removeAll(Collection<?> c) {
+            return backing.removeAll(c);
+        }
+
+        @Override
+        public boolean retainAll(Collection<?> c) {
+            return backing.retainAll(c);
+        }
+
+        @Override
+        public void clear() {
+            backing.clear();
+        }
+
+        @Override
+        public LongIterator iterator() {
+            return FastUtilHackUtil.itrLongWrap(backing);
+        }
+
+        @Override
+        public boolean rem(long key) {
+            return this.remove(key);
+        }
+
+        @Override
+        public long[] toLongArray() {
+            return null;
+        }
+
+        @Override
+        public long[] toLongArray(long[] a) {
+            return toArray(a);
+        }
+
+        @Override
+        public long[] toArray(long[] a) {
+            return ArrayUtils.toPrimitive(backing.toArray(new Long[0]));
+        }
+
+        @Override
+        public boolean addAll(LongCollection c) {
+            return addAll((Collection<Long>) c);
+        }
+
+        @Override
+        public boolean containsAll(LongCollection c) {
+            return containsAll((Collection<Long>) c);
+        }
+
+        @Override
+        public boolean removeAll(LongCollection c) {
+            return removeAll((Collection<Long>) c);
+        }
+
+        @Override
+        public boolean retainAll(LongCollection c) {
+            return retainAll((Collection<Long>) c);
+        }
+
+    }
+
+    public static LongCollection wrapLongs(Collection<Long> c) {
+        return new WrappingLongCollection(c);
+    }
+
 
     public static class WrappingLongListIterator implements LongListIterator {
 
@@ -1357,6 +1514,14 @@ public class FastUtilHackUtil {
 
     public static IntIterator itrIntWrap(Iterable<Integer> backing) {
         return new WrappingIntIterator(backing.iterator());
+    }
+
+    public static LongIterator itrLongWrap(Iterator<Long> backing) {
+        return new WrappingLongIterator(backing);
+    }
+
+    public static LongIterator itrLongWrap(Iterable<Long> backing) {
+        return new WrappingLongIterator(backing.iterator());
     }
 
     public static class WrapperObjectIterator<T> implements ObjectIterator<T> {

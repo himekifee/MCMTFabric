@@ -7,21 +7,18 @@
     "ChunkTicketManagerMixin",
     "EntityIndexMixin",
     "EntityListMixin",
+    "FastUtilsMixin",
     "LevelPropagatorMixin",
+    "LockHelperMixin",
     "MinecraftServerMixin",
-    "PalettedContainerMixin",
     "SectionedEntityCacheMixin",
     "SerializingRegionBasedStorageMixin",
     "ServerChunkManagerMixin",
-    "ServerTickSchedulerMixin",
     "ServerWorldMixin",
-
     "TypeFilterableListMixin",
     "UtilMixin",
     "WorldMixin",
-    "fastutil.Int2ObjectOpenHashMapMixin",
-    "fastutil.Long2ObjectOpenHashMapMixin",
-    "fastutil.LongLinkedOpenHashSetMixin"
+    "WorldTickSchedulerMixin"
   ],
   "client": [
   ],

@@ -31,7 +31,7 @@ public abstract class ServerChunkManagerMixin extends ChunkManager {
     @Final
     public ServerChunkManager.MainThreadExecutor mainThreadExecutor;
 
-    @Redirect(method = "method_20801", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/world/ServerWorld;tickChunk(Lnet/minecraft/world/chunk/WorldChunk;I)V"))
+    @Redirect(method = "tickChunks", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/world/ServerWorld;tickChunk(Lnet/minecraft/world/chunk/WorldChunk;I)V"))
     private void overwriteTickChunk(ServerWorld serverWorld, WorldChunk chunk, int randomTickSpeed) {
         ParallelProcessor.callTickChunks(serverWorld, chunk, randomTickSpeed);
     }

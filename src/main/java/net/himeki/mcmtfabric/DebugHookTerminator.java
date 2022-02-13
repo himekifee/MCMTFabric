@@ -15,9 +15,6 @@ import net.minecraft.server.world.ChunkHolder;
 import net.minecraft.server.world.ServerChunkManager;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.world.ChunkSerializer;
-import net.minecraft.world.biome.source.BiomeArray;
-import net.minecraft.world.biome.source.BiomeSource;
-import net.minecraft.world.biome.source.FixedBiomeSource;
 import net.minecraft.world.chunk.ProtoChunk;
 import net.minecraft.world.chunk.WorldChunk;
 import org.apache.logging.log4j.LogManager;
@@ -117,10 +114,7 @@ public class DebugHookTerminator {
                         if (config.enableBlankReturn) {
                             /* 1.16.1 code; AKA the only thing that changed  */
                             // Generate a new empty chunk
-                            MutableRegistry<Biome> biomeRegistry = scp.getWorld().getRegistryManager().getMutable(Registry.BIOME_KEY);
-                            BiomeSource bp = new FixedBiomeSource(biomeRegistry.get(0));
-                            Chunk out = new WorldChunk(scp.getWorld(), new ChunkPos(chunkpos),
-                                    new BiomeArray(biomeRegistry, scp.getWorld(),new ChunkPos(chunkpos), bp));
+                            Chunk out = new WorldChunk(scp.getWorld(), new ChunkPos(chunkpos));
                             // SCIENCE
                             completableFuture.complete(Either.left(out));
                             /* */
@@ -139,7 +133,7 @@ public class DebugHookTerminator {
                             try {
                                 NbtCompound cnbt = scp.threadedAnvilChunkStorage.getNbt(new ChunkPos(chunkpos));
                                 if (cnbt != null) {
-                                    ProtoChunk cp = ChunkSerializer.deserialize((ServerWorld) scp.getWorld(), scp.threadedAnvilChunkStorage.structureManager, scp.threadedAnvilChunkStorage.pointOfInterestStorage, new ChunkPos(chunkpos), cnbt);
+                                    ProtoChunk cp = ChunkSerializer.deserialize((ServerWorld) scp.getWorld(), scp.threadedAnvilChunkStorage.pointOfInterestStorage, new ChunkPos(chunkpos), cnbt);
                                     completableFuture.complete(Either.left(new WorldChunk((ServerWorld) scp.getWorld(), cp, null)));
                                 }
                             } catch (IOException e) {

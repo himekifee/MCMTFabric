@@ -32,10 +32,10 @@ dependencies {
     // PSA: Some older mods, compiled on Loom 0.2.1, might have outdated Maven POMs.
     // You may need to force-disable transitiveness on them.
 
-    modImplementation "com.terraformersmc:modmenu:2.0.3"
+    modImplementation "com.terraformersmc:modmenu:3.0.1"
     implementation group: 'com.google.code.findbugs', name: 'jsr305', version: '3.0.2'
 
-    modApi("me.shedaniel.cloth:cloth-config-fabric:5.0.34") {
+    modApi("me.shedaniel.cloth:cloth-config-fabric:6.2.57") {
         exclude(group: "net.fabricmc.fabric-api")
     }
     modImplementation 'com.electronwill.night-config:toml:3.6.0'

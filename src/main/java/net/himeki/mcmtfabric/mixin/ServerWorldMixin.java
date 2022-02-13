@@ -22,12 +22,14 @@ import net.minecraft.world.chunk.ChunkStatusChangeListener;
 import net.minecraft.world.dimension.DimensionType;
 import net.minecraft.world.gen.chunk.ChunkGenerator;
 import net.minecraft.world.level.storage.LevelStorage;
+import org.objectweb.asm.Opcodes;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
 
+import java.util.Collection;
 import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.Executor;
@@ -52,8 +54,8 @@ public abstract class ServerWorldMixin extends World implements StructureWorldAc
     private ObjectLinkedOpenHashSet<BlockEvent> syncedBlockEventQueue = null;
 
     @Redirect(method = "<init>", at = @At(value = "NEW", target = "net/minecraft/server/world/ServerChunkManager"))
-    private ServerChunkManager overwriteServerChunkManager(ServerWorld serverWorld, LevelStorage.Session session, DataFixer dataFixer, StructureManager structureManager, Executor workerExecutor, ChunkGenerator chunkGenerator, int viewDistance, boolean bl, WorldGenerationProgressListener worldGenerationProgressListener, ChunkStatusChangeListener chunkStatusChangeListener, Supplier<PersistentStateManager> supplier) {
-        return new ParaServerChunkProvider(serverWorld, session, dataFixer, structureManager, workerExecutor, chunkGenerator, viewDistance, bl, worldGenerationProgressListener, chunkStatusChangeListener, supplier);
+    private ServerChunkManager overwriteServerChunkManager(ServerWorld world, LevelStorage.Session session, DataFixer dataFixer, StructureManager structureManager, Executor workerExecutor, ChunkGenerator chunkGenerator, int viewDistance, int simulationDistance, boolean dsync, WorldGenerationProgressListener worldGenerationProgressListener, ChunkStatusChangeListener chunkStatusChangeListener, Supplier persistentStateManagerFactory) {
+        return new ParaServerChunkProvider(world, session, dataFixer, structureManager, workerExecutor, chunkGenerator, viewDistance, simulationDistance, dsync, worldGenerationProgressListener, chunkStatusChangeListener, persistentStateManagerFactory);
     }
 
     @Redirect(method = "tickEntity", at = @At(value = "INVOKE", target = "Lnet/minecraft/entity/Entity;tick()V"))
@@ -76,11 +78,21 @@ public abstract class ServerWorldMixin extends World implements StructureWorldAc
         return syncedBlockEventCLinkedQueue.isEmpty();
     }
 
-
     @Redirect(method = "processSyncedBlockEvents", at = @At(value = "INVOKE", target = "Lit/unimi/dsi/fastutil/objects/ObjectLinkedOpenHashSet;removeFirst()Ljava/lang/Object;"))
     private Object overwriteQueueRemoveFirst(ObjectLinkedOpenHashSet<BlockEvent> objectLinkedOpenHashSet) {
         BlockEvent blockEvent = syncedBlockEventCLinkedQueue.removeFirst();
         ParallelProcessor.sendQueuedBlockEvents(syncedBlockEventCLinkedQueue, (ServerWorld) (Object) this);
         return blockEvent;
+    }
+
+    @Redirect(method = "processSyncedBlockEvents", at = @At(value = "INVOKE", target = "Lit/unimi/dsi/fastutil/objects/ObjectLinkedOpenHashSet;addAll(Ljava/util/Collection;)Z"))
+    private boolean overwriteQueueAddAll(ObjectLinkedOpenHashSet<BlockEvent> instance, Collection<? extends BlockEvent> c) {
+        return syncedBlockEventCLinkedQueue.addAll(c);
+    }
+
+    @Redirect(method = "updateListeners",at = @At(value = "FIELD",target = "Lnet/minecraft/server/world/ServerWorld;duringListenerUpdate:Z",opcode = Opcodes.PUTFIELD))
+    private void skipSendBlockUpdatedCheck(ServerWorld instance, boolean value)
+    {
+
     }
 }
