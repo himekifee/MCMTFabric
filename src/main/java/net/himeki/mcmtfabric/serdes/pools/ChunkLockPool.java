@@ -1,5 +1,7 @@
 package net.himeki.mcmtfabric.serdes.pools;
 
+import javax.annotation.Nullable;
+
 import net.himeki.mcmtfabric.parallelised.ChunkLock;
 
 import net.minecraft.util.math.BlockPos;
@@ -10,7 +12,9 @@ public class ChunkLockPool implements ISerDesPool {
     public class CLPOptions implements ISerDesOptions {
         int range;
 
-        public int getRange() { return range; };
+        public int getRange() {
+            return range;
+        }
     }
 
     ChunkLock cl = new ChunkLock();
@@ -20,7 +24,7 @@ public class ChunkLockPool implements ISerDesPool {
     }
 
     @Override
-    public void serialise(Runnable task, Object o, BlockPos bp, World w, ISerDesOptions options) {
+    public void serialise(Runnable task, Object o, BlockPos bp, World w, @Nullable ISerDesOptions options) {
         int range = 1;
         if (options instanceof CLPOptions) {
             range = ((CLPOptions) options).getRange();
@@ -32,8 +36,4 @@ public class ChunkLockPool implements ISerDesPool {
             cl.unlock(locks);
         }
     }
-
-
-
-
 }

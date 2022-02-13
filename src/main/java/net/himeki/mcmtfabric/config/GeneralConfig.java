@@ -39,6 +39,9 @@ public class GeneralConfig implements ConfigData {
     @Comment("Disable world post tick parallelisation")
     public boolean disableWorldPostTick = false;
 
+    @Comment("Disable world parallel chunk loading")
+    public boolean disableMultiChunk = false;
+
     // Entity
     @Comment("Disable entity parallelisation")
     public boolean disableEntity = false;
@@ -84,6 +87,9 @@ public class GeneralConfig implements ConfigData {
 
     @Comment("Attempts to re-load timed out chunks; Seems to work")
     public boolean enableTimeoutRegen = false;
+
+    @Comment("Simply returns a new empty chunk instead of a re-generating fully")
+    public boolean enableBlankReturn = false;
 
     @Comment("Amount of workless iterations to wait before declaring a chunk load attempt as timed out\n"
             + "This is in ~100us iterations (plus minus yield time) so timeout >= timeoutCount * 100us")

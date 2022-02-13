@@ -5,6 +5,7 @@ import net.himeki.mcmtfabric.config.GeneralConfig;
 import net.himeki.mcmtfabric.serdes.SerDesHookTypes;
 import net.himeki.mcmtfabric.serdes.SerDesRegistry;
 import net.himeki.mcmtfabric.serdes.filter.ISerDesFilter;
+import net.himeki.mcmtfabric.serdes.pools.PostExecutePool;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.block.entity.PistonBlockEntity;
 import net.minecraft.entity.Entity;
@@ -83,11 +84,14 @@ public class ParallelProcessor {
         return isThreadPooled("MCMT", Thread.currentThread());
     }
 
+    static long tickStart = 0;
+
     public static void preTick(MinecraftServer server) {
         if (p != null) {
             LOGGER.warn("Multiple servers?");
             return;
         } else {
+            tickStart = System.nanoTime();
             isTicking.set(true);
             p = new Phaser();
             p.register();
@@ -132,6 +136,10 @@ public class ParallelProcessor {
 
     }
 
+    public static long[] lastTickTime = new long[32];
+    public static int lastTickTimePos = 0;
+    public static int lastTickTimeFill = 0;
+
     public static void postTick(MinecraftServer server) {
         if (mcs != server) {
             LOGGER.warn("Multiple servers?");
@@ -140,6 +148,17 @@ public class ParallelProcessor {
             p.arriveAndAwaitAdvance();
             isTicking.set(false);
             p = null;
+            //PostExecute logic
+            Deque<Runnable> queue = PostExecutePool.POOL.getQueue();
+            Iterator<Runnable> qi = queue.iterator();
+            while (qi.hasNext()) {
+                Runnable r = qi.next();
+                r.run();
+                qi.remove();
+            }
+            lastTickTime[lastTickTimePos] = System.nanoTime() - tickStart;
+            lastTickTimePos = (lastTickTimePos+1)%lastTickTime.length;
+            lastTickTimeFill = Math.min(lastTickTimeFill+1, lastTickTime.length-1);
         }
     }
 
@@ -276,4 +295,9 @@ public class ParallelProcessor {
             bed.remove();
         }
     }
+
+    public static boolean shouldThreadChunks() {
+        return MCMT.config.disableMultiChunk;
+    }
+
 }

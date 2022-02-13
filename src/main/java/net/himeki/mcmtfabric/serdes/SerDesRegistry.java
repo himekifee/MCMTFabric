@@ -1,27 +1,29 @@
 package net.himeki.mcmtfabric.serdes;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
+import com.google.common.collect.Lists;
 import net.himeki.mcmtfabric.MCMT;
 import net.himeki.mcmtfabric.config.BlockEntityLists;
 import net.himeki.mcmtfabric.config.GeneralConfig;
-import net.himeki.mcmtfabric.serdes.filter.ISerDesFilter;
-import net.himeki.mcmtfabric.serdes.filter.LegacyFilter;
-import net.himeki.mcmtfabric.serdes.filter.PistonFilter;
-import net.himeki.mcmtfabric.serdes.filter.VanillaFilter;
+import net.himeki.mcmtfabric.config.SerDesConfig;
+import net.himeki.mcmtfabric.serdes.filter.*;
 import net.himeki.mcmtfabric.serdes.pools.ChunkLockPool;
 import net.himeki.mcmtfabric.serdes.pools.ISerDesPool;
 import net.himeki.mcmtfabric.serdes.pools.ISerDesPool.ISerDesOptions;
 
+import net.himeki.mcmtfabric.serdes.pools.PostExecutePool;
+import net.himeki.mcmtfabric.serdes.pools.SingleExecutionPool;
 import net.minecraft.block.entity.PistonBlockEntity;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Fully modular filtering
@@ -29,7 +31,7 @@ import net.minecraft.world.World;
  * @author jediminer543
  */
 public class SerDesRegistry {
-
+    private static final Logger LOGGER = LogManager.getLogger();
     private static final Map<Class<?>, ISerDesFilter> EMPTYMAP = new ConcurrentHashMap<Class<?>, ISerDesFilter>();
     private static final Set<Class<?>> EMPTYSET = ConcurrentHashMap.newKeySet();
 
@@ -56,6 +58,7 @@ public class SerDesRegistry {
     private static final ISerDesFilter DEFAULT_FILTER = new DefaultFilter();
 
     public static void init() {
+        SerDesConfig.loadConfigs();
         initPools();
         initFilters();
         initLookup();
@@ -63,10 +66,17 @@ public class SerDesRegistry {
 
     public static void initFilters() {
         filters.clear();
-        //TODO make this an event
-        filters.add(new VanillaFilter());
+        // High Priority (I.e. non overridable)
         filters.add(new PistonFilter());
-        filters.add(new LegacyFilter());
+        filters.add(new VanillaFilter());
+        filters.add(new LegacyFilter()); //TODO kill me
+        // Config loaded
+        for (SerDesConfig.FilterConfig fpc : SerDesConfig.getFilters()) {
+            ISerDesFilter filter = new GenericConfigFilter(fpc);
+            filters.add(filter);
+        }
+        // Low priority
+        filters.add(AutoFilter.singleton());
         filters.add(DEFAULT_FILTER);
         for (ISerDesFilter sdf : filters) {
             sdf.init();
@@ -121,25 +131,70 @@ public class SerDesRegistry {
         return registry.get(name);
     }
 
+    public static ISerDesPool getOrCreatePool(String name, Function<String, ISerDesPool> source) {
+        return registry.computeIfAbsent(name, source);
+    }
+
     public static ISerDesPool getOrCreatePool(String name, Supplier<ISerDesPool> source) {
-        return registry.computeIfAbsent(name, (i) -> source.get());
+        return getOrCreatePool(name, i -> {
+            ISerDesPool out = source.get();
+            out.init(i, new HashMap<String, Object>());
+            return out;
+        });
+    }
+
+    public static boolean removeFromWhitelist(ISerDesHookType isdh, Class<?> c) {
+        return whitelist.getOrDefault(isdh, EMPTYSET).remove(c);
     }
 
     public static void initPools() {
         registry.clear();
+        // HARDCODED DEFAULTS
+        getOrCreatePool("LEGACY", ChunkLockPool::new);
+        getOrCreatePool("SINGLE", SingleExecutionPool::new);
+        getOrCreatePool("POST", () -> PostExecutePool.POOL);
+        // LOADED FROM CONFIG
+        List<SerDesConfig.PoolConfig> pcl = SerDesConfig.getPools();
+        if (pcl != null) for (SerDesConfig.PoolConfig pc : pcl) {
+            if (!registry.containsKey(pc.getName())) {
+                try {
+                    Class<?> c = Class.forName(pc.getClazz());
+                    Constructor<?> init = c.getConstructor();
+                    Object o = init.newInstance();
+                    if (o instanceof ISerDesPool) {
+                        registry.put(pc.getName(), (ISerDesPool) o);
+                        ((ISerDesPool) o).init(pc.getName(), pc.getInitParams());
+                    }
+                } catch (ClassNotFoundException e) {
+                    e.printStackTrace();
+                } catch (NoSuchMethodException e) {
+                    e.printStackTrace();
+                } catch (SecurityException e) {
+                    e.printStackTrace();
+                } catch (InstantiationException e) {
+                    e.printStackTrace();
+                } catch (IllegalAccessException e) {
+                    e.printStackTrace();
+                } catch (IllegalArgumentException e) {
+                    e.printStackTrace();
+                } catch (InvocationTargetException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
     }
 
     public static class DefaultFilter implements ISerDesFilter {
-        private static GeneralConfig config;
 
         //TODO make not shit
         public static boolean filterTE(Object tte) {
+            GeneralConfig config = MCMT.config;
             boolean isLocking = false;
             if (BlockEntityLists.teBlackList.contains(tte.getClass())) {
                 isLocking = true;
             }
             // Apparently a string starts with check is faster than Class.getPackage; who knew (I didn't)
-            if (!isLocking && MCMT.config.chunkLockModded && !tte.getClass().getName().startsWith("net.minecraft.tileentity.")) {
+            if (!isLocking && config.chunkLockModded && !tte.getClass().getName().startsWith("net.minecraft.tileentity.")) {
                 isLocking = true;
             }
             if (isLocking && BlockEntityLists.teWhiteList.contains(tte.getClass())) {
@@ -152,14 +207,14 @@ public class SerDesRegistry {
         }
 
         ISerDesPool clp;
-        ISerDesOptions serDesConfig;
+        ISerDesOptions config;
 
         @Override
         public void init() {
             clp = SerDesRegistry.getOrCreatePool("LEGACY", ChunkLockPool::new);
-            Map<String, String> cfg = new HashMap<>();
+            Map<String, Object> cfg = new HashMap<>();
             cfg.put("range", "1");
-            serDesConfig = clp.compileOptions(cfg);
+            config = clp.compileOptions(cfg);
         }
 
         @Override
@@ -190,12 +245,29 @@ public class SerDesRegistry {
             }
             // TODO legacy behaviour please fix
             if (hookType.equals(SerDesHookTypes.TETick) && filterTE(obj)) {
-                clp.serialise(task, obj, bp, w, serDesConfig);
+                clp.serialise(task, obj, bp, w, config);
             } else {
-                task.run();
+                try {
+                    task.run();
+                } catch (Exception e) {
+                    LOGGER.error("Exception running " + obj.getClass().getName() + " asynchronusly", e);
+                    LOGGER.error("Adding " + obj.getClass().getName() + " to blacklist.");
+                    SerDesConfig.createFilterConfig(
+                            "auto-" + obj.getClass().getName(),
+                            10,
+                            Lists.newArrayList(),
+                            Lists.newArrayList(obj.getClass().getName()),
+                            null
+                    );
+
+                    AutoFilter.singleton().addClassToBlacklist(obj.getClass());
+                    // TODO: this could leave a tick in an incomplete state. should the full exception be thrown?
+                    if (e instanceof RuntimeException) throw e;
+                }
             }
         }
 
 
     }
 }
+

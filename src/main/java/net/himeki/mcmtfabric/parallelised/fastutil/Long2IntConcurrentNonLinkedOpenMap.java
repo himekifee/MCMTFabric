@@ -7,6 +7,7 @@ import it.unimi.dsi.fastutil.longs.*;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+@SuppressWarnings("deprecation")
 public class Long2IntConcurrentNonLinkedOpenMap extends Long2IntLinkedOpenHashMap {
 
     /**

@@ -51,6 +51,7 @@ public class ParaServerChunkProvider extends ServerChunkManager {
     private static final int HASH_INIT = 0x811c9dc5;
 
     protected Thread cacheThread;
+    protected ChunkLock loadingChunkLock = new ChunkLock();
     Logger log = LogManager.getLogger();
     Marker chunkCleaner = MarkerManager.getMarker("ChunkCleaner");
     private final World world;
@@ -88,31 +89,52 @@ public class ParaServerChunkProvider extends ServerChunkManager {
     @Override
     @Nullable
     public Chunk getChunk(int chunkX, int chunkZ, ChunkStatus requiredStatus, boolean load) {
-        GeneralConfig config = MCMT.config;
-        if (config.disabled || config.disableChunkProvider || (requiredStatus != ChunkStatus.FULL && requiredStatus != ChunkStatus.BIOMES && requiredStatus != ChunkStatus.STRUCTURE_REFERENCES)) {
-            synchronized (this) {
-            	return super.getChunk(chunkX, chunkZ, requiredStatus, load);
-            }
-        }
 
+        if (MCMT.config.disabled || MCMT.config.disableChunkProvider) {
+            if (ParallelProcessor.isThreadPooled("Main", Thread.currentThread())) {
+                return CompletableFuture.supplyAsync(() -> {
+                    return this.getChunk(chunkX, chunkZ, requiredStatus, load);
+                }, this.mainThreadExecutor).join();
+            }
+            return super.getChunk(chunkX, chunkZ, requiredStatus, load);
+        }
         if (ParallelProcessor.isThreadPooled("Main", Thread.currentThread())) {
             return CompletableFuture.supplyAsync(() -> {
                 return this.getChunk(chunkX, chunkZ, requiredStatus, load);
             }, this.mainThreadExecutor).join();
         }
 
-        Chunk chunk = lookupChunk(ChunkPos.toLong(chunkX, chunkZ), requiredStatus, false);
-        if (chunk == null) {
-        	synchronized (this) {
-        		if ((chunk = lookupChunk(ChunkPos.toLong(chunkX, chunkZ), requiredStatus, false)) != null) return chunk; // Check if another thread already loaded this chunk at the same time
-                chunk = super.getChunk(chunkX, chunkZ, requiredStatus, load);
+        long i = ChunkPos.toLong(chunkX, chunkZ);
+
+        Chunk c = lookupChunk(i, requiredStatus, false);
+        if (c != null) {
+            return c;
+        }
+
+        //log.debug("Missed chunk " + i + " on status "  + requiredStatus.toString());
+
+        Chunk cl;
+        if (ParallelProcessor.shouldThreadChunks()) {
+            // Multithread but still limit to 1 load op per chunk
+            long[] locks = loadingChunkLock.lock(i, 0);
+            try {
+                if ((c = lookupChunk(i, requiredStatus, false)) != null) {
+                    return c;
+                }
+                cl = super.getChunk(chunkX, chunkZ, requiredStatus, load);
+            } finally {
+                loadingChunkLock.unlock(locks);
             }
-            cacheChunk(ChunkPos.toLong(chunkX, chunkZ), chunk, requiredStatus);
+        } else {
+            synchronized (this) {
+                if (chunkCache.containsKey(new ChunkCacheAddress(i, requiredStatus)) && (c = lookupChunk(i, requiredStatus, false)) != null) {
+                    return c;
+                }
+                cl = super.getChunk(chunkX, chunkZ, requiredStatus, load);
+            }
         }
-        if (chunk == null) {
-        	log.warn("Failed to aquire chunk: " + chunkX + ", " + chunkZ + " - " + requiredStatus);
-        }
-        return chunk;
+        cacheChunk(i, cl, requiredStatus);
+        return cl;
     }
 
     public Chunk lookupChunk(long chunkPos, ChunkStatus status, boolean compute) {

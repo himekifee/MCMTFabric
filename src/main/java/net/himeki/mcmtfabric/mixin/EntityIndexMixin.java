@@ -17,7 +17,7 @@ import java.util.Map;
 import java.util.UUID;
 
 @Mixin(EntityIndex.class)
-public class EntityIndexMixin<T extends EntityLike> {
+public abstract class EntityIndexMixin<T extends EntityLike> {
     @Shadow
     @Final
     @Mutable

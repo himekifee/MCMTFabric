@@ -6,10 +6,10 @@ import me.shedaniel.autoconfig.serializer.Toml4jConfigSerializer;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v1.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
-import net.fabricmc.fabric.api.event.server.ServerStartCallback;
 import net.himeki.mcmtfabric.commands.ConfigCommand;
 import net.himeki.mcmtfabric.commands.StatsCommand;
 import net.himeki.mcmtfabric.config.GeneralConfig;
+import net.himeki.mcmtfabric.jmx.JMXRegistration;
 import net.himeki.mcmtfabric.serdes.SerDesRegistry;
 import net.minecraft.util.ActionResult;
 import org.apache.logging.log4j.LogManager;
@@ -33,6 +33,9 @@ public class MCMT implements ModInitializer {
         holder.load();  // Load again to run loadTELists() handler
         config= holder.getConfig();
 
+        if (System.getProperty("jmt.mcmt.jmx") != null) {
+            JMXRegistration.register();
+        }
 
         StatsCommand.runDataThread();
         SerDesRegistry.init();
