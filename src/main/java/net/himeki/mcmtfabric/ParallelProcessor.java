@@ -176,7 +176,7 @@ public class ParallelProcessor {
         ex.execute(() -> {
             try {
                 final ISerDesFilter filter = SerDesRegistry.getFilter(SerDesHookTypes.EntityTick, entityIn.getClass());
-                currentTEs.incrementAndGet();
+                currentEnts.incrementAndGet();
                 if (filter != null) {
                     filter.serialise(entityIn::tick, entityIn, entityIn.getBlockPos(), serverworld, SerDesHookTypes.EntityTick);
                 } else {
@@ -255,7 +255,6 @@ public class ParallelProcessor {
                 if (filter != null) {
                     filter.serialise(tte::tick, tte, tte.getPos(), world, SerDesHookTypes.TETick);
                 } else {
-                    currentTEs.incrementAndGet();
                     tte.tick();
                 }
             } catch (Exception e) {

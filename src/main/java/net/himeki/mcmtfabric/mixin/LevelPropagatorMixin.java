@@ -21,6 +21,7 @@ public abstract class LevelPropagatorMixin {
     @Final
     private Long2ByteMap pendingUpdates = new Long2ByteConcurrentHashMap();
 
+    @Final
     @Shadow
     @Mutable
     private LongLinkedOpenHashSet[] pendingIdUpdatesByLevel;
