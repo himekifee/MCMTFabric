@@ -10,6 +10,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import it.unimi.dsi.fastutil.longs.*;
+import it.unimi.dsi.fastutil.shorts.ShortIterator;
 import org.apache.commons.lang3.ArrayUtils;
 
 import it.unimi.dsi.fastutil.bytes.ByteCollection;
@@ -517,6 +518,36 @@ public class FastUtilHackUtil {
 
         @Override
         public Long next() {
+            return backing.next();
+        }
+
+        @Override
+        public void remove() {
+            backing.remove();
+        }
+
+    }
+
+    static class WrappingShortIterator implements ShortIterator {
+
+        Iterator<Short> backing;
+
+        public WrappingShortIterator(Iterator<Short> backing) {
+            this.backing = backing;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return backing.hasNext();
+        }
+
+        @Override
+        public short nextShort() {
+            return backing.next();
+        }
+
+        @Override
+        public Short next() {
             return backing.next();
         }
 
@@ -1522,6 +1553,14 @@ public class FastUtilHackUtil {
 
     public static LongIterator itrLongWrap(Iterable<Long> backing) {
         return new WrappingLongIterator(backing.iterator());
+    }
+
+    public static ShortIterator itrShortWrap(Iterator<Short> backing) {
+        return new WrappingShortIterator(backing);
+    }
+
+    public static ShortIterator itrShortWrap(Iterable<Short> backing) {
+        return new WrappingShortIterator(backing.iterator());
     }
 
     public static class WrapperObjectIterator<T> implements ObjectIterator<T> {
