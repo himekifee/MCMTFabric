@@ -293,7 +293,7 @@ public class ParallelProcessor {
     }
 
     public static boolean shouldThreadChunks() {
-        return MCMT.config.disableMultiChunk;
+        return !MCMT.config.disableMultiChunk;
     }
 
 }

@@ -16,6 +16,8 @@
     "SerializingRegionBasedStorageMixin",
     "ServerChunkManagerMixin",
     "ServerWorldMixin",
+    "SharedConstantsMixin",
+    "SimulationDistanceLevelPropagatorMixin",
     "TypeFilterableListMixin",
     "UtilMixin",
     "WorldMixin",

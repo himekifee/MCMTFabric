@@ -20,10 +20,6 @@ public abstract class ChunkTicketManagerMixin {
 
     @Shadow
     @Final
-    final Long2ObjectOpenHashMap<SortedArraySet<ChunkTicket<?>>> ticketsByPosition = new Long2ObjectOpenConcurrentHashMap<>();
-
-    @Shadow
-    @Final
     final Set<ChunkHolder> chunkHolders = ConcurrentCollections.newHashSet();
 
     @Shadow
