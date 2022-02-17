@@ -18,6 +18,7 @@
     "ServerWorldMixin",
     "SharedConstantsMixin",
     "SimulationDistanceLevelPropagatorMixin",
+    "SyncAllMixin",
     "TypeFilterableListMixin",
     "UtilMixin",
     "WorldMixin",

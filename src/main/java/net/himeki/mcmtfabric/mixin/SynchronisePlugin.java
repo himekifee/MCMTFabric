@@ -36,6 +36,8 @@ public class SynchronisePlugin implements IMixinConfigPlugin {
 
 
         syncAllSet.add("net.himeki.mcmtfabric.mixin.FastUtilsMixin");
+        syncAllSet.add("net.himeki.mcmtfabric.mixin.SyncAllMixin");
+
     }
 
     @Override
