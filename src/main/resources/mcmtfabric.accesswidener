@@ -5,3 +5,4 @@ Accessible field net/minecraft/server/world/ThreadedAnvilChunkStorage structureM
 Accessible method net/minecraft/server/world/ServerWorld processBlockEvent (Lnet/minecraft/server/world/BlockEvent;)Z
 Accessible method net/minecraft/server/world/ServerChunkManager getChunkHolder (J)Lnet/minecraft/server/world/ChunkHolder;
 Accessible method net/minecraft/server/world/ServerChunkManager$MainThreadExecutor runTask ()Z
+Accessible method net/minecraft/tag/ConfiguredStructureFeatureTags of (Ljava/lang/String;)Lnet/minecraft/tag/TagKey;
