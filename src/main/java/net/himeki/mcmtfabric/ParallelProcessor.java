@@ -26,6 +26,7 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BooleanSupplier;
+import java.util.function.Consumer;
 
 public class ParallelProcessor {
 
@@ -160,10 +161,10 @@ public class ParallelProcessor {
     }
 
 
-    public static void callEntityTick(Entity entityIn, ServerWorld serverworld) {
+    public static void callEntityTick(Consumer<Entity> tickConsumer , Entity entityIn, ServerWorld serverworld) {
         GeneralConfig config = MCMT.config;
         if (config.disabled || config.disableEntity) {
-            entityIn.tick();
+            tickConsumer.accept(entityIn);
             return;
         }
         String taskName = null;
@@ -180,7 +181,7 @@ public class ParallelProcessor {
                 if (filter != null) {
                     filter.serialise(entityIn::tick, entityIn, entityIn.getBlockPos(), serverworld, SerDesHookTypes.EntityTick);
                 } else {
-                    entityIn.tick();
+                    tickConsumer.accept(entityIn);
                 }
             } finally {
                 currentEnts.decrementAndGet();

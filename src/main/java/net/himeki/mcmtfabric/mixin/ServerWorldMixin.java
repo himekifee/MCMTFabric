@@ -15,7 +15,6 @@ import net.minecraft.structure.StructureManager;
 import net.minecraft.util.profiler.Profiler;
 import net.minecraft.util.registry.RegistryKey;
 import net.minecraft.world.MutableWorldProperties;
-import net.minecraft.world.PersistentStateManager;
 import net.minecraft.world.StructureWorldAccess;
 import net.minecraft.world.World;
 import net.minecraft.world.chunk.ChunkStatusChangeListener;
@@ -34,6 +33,7 @@ import java.util.Collection;
 import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.Executor;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
@@ -61,9 +61,10 @@ public abstract class ServerWorldMixin extends World implements StructureWorldAc
         return new ParaServerChunkProvider(world, session, dataFixer, structureManager, workerExecutor, chunkGenerator, viewDistance, simulationDistance, dsync, worldGenerationProgressListener, chunkStatusChangeListener, persistentStateManagerFactory);
     }
 
-    @Redirect(method = "tickEntity", at = @At(value = "INVOKE", target = "Lnet/minecraft/entity/Entity;tick()V"))
-    private void overwriteEntityTicking(Entity entity) {
-        ParallelProcessor.callEntityTick(entity, (ServerWorld) (Object) this);
+
+    @Redirect(method = "method_31420", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/world/ServerWorld;tickEntity(Ljava/util/function/Consumer;Lnet/minecraft/entity/Entity;)V"))
+    private void overwriteEntityTicking(ServerWorld instance, Consumer consumer, Entity entity) {
+        ParallelProcessor.callEntityTick(consumer, entity, (ServerWorld) (Object) this);
     }
 
     @Redirect(method = "addSyncedBlockEvent", at = @At(value = "INVOKE", target = "Lit/unimi/dsi/fastutil/objects/ObjectLinkedOpenHashSet;add(Ljava/lang/Object;)Z"))
