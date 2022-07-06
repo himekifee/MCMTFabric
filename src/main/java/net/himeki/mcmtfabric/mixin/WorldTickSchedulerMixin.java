@@ -9,6 +9,7 @@ import net.minecraft.world.tick.QueryableTickScheduler;
 import net.minecraft.world.tick.WorldTickScheduler;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Mutable;
 import org.spongepowered.asm.mixin.Shadow;
 
 import java.util.List;
@@ -19,7 +20,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public abstract class WorldTickSchedulerMixin<T> implements QueryableTickScheduler<T> {
     @Shadow
     @Final
-    private final Long2ObjectMap<ChunkTickScheduler<T>> chunkTickSchedulers = new Long2ObjectOpenConcurrentHashMap<>();
+    @Mutable
+    private Long2ObjectMap<ChunkTickScheduler<T>> chunkTickSchedulers = new Long2ObjectOpenConcurrentHashMap<>();
 
 //    @Shadow
 //    @Final
@@ -27,13 +29,16 @@ public abstract class WorldTickSchedulerMixin<T> implements QueryableTickSchedul
 
     @Shadow
     @Final
-    private final Queue<ChunkTickScheduler<T>> tickableChunkTickSchedulers = ConcurrentCollections.newArrayDeque();
+    @Mutable
+    private Queue<ChunkTickScheduler<T>> tickableChunkTickSchedulers = ConcurrentCollections.newArrayDeque();
 
     @Shadow
     @Final
-    private final Queue<OrderedTick<T>> tickableTicks = ConcurrentCollections.newArrayDeque();
+    @Mutable
+    private Queue<OrderedTick<T>> tickableTicks = ConcurrentCollections.newArrayDeque();
 
     @Shadow
     @Final
-    private final List<OrderedTick<T>> tickedTicks = new CopyOnWriteArrayList<>();
+    @Mutable
+    private List<OrderedTick<T>> tickedTicks = new CopyOnWriteArrayList<>();
 }

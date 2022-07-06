@@ -11,17 +11,20 @@ import net.minecraft.world.ChunkPosDistanceLevelPropagator;
 import net.minecraft.world.SimulationDistanceLevelPropagator;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Mutable;
 import org.spongepowered.asm.mixin.Shadow;
 
 @Mixin(SimulationDistanceLevelPropagator.class)
 public abstract class SimulationDistanceLevelPropagatorMixin extends ChunkPosDistanceLevelPropagator {
     @Shadow
     @Final
-    protected final Long2ByteMap levels = new Long2ByteConcurrentHashMap();
+    @Mutable
+    protected Long2ByteMap levels = new Long2ByteConcurrentHashMap();
 
     @Shadow
     @Final
-    private final Long2ObjectOpenHashMap<SortedArraySet<ChunkTicket<?>>> tickets = new Long2ObjectOpenConcurrentHashMap<>();
+    @Mutable
+    private Long2ObjectOpenHashMap<SortedArraySet<ChunkTicket<?>>> tickets = new Long2ObjectOpenConcurrentHashMap<>();
 
     protected SimulationDistanceLevelPropagatorMixin(int i, int j, int k) {
         super(i, j, k);

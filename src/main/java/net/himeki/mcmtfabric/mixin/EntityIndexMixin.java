@@ -25,6 +25,7 @@ public abstract class EntityIndexMixin<T extends EntityLike> {
 
     @Shadow
     @Final
+    @Mutable
     private Map<UUID, T> uuidToEntity = ConcurrentCollections.newHashMap();
 
     @Inject(method = "<init>",at = @At("TAIL"))

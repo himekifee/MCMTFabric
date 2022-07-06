@@ -25,6 +25,7 @@ import net.minecraft.world.level.storage.LevelStorage;
 import org.objectweb.asm.Opcodes;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Mutable;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
@@ -47,10 +48,12 @@ public abstract class ServerWorldMixin extends World implements StructureWorldAc
 
     @Shadow
     @Final
-    Set<MobEntity> loadedMobs = ConcurrentCollections.newHashSet();
+    @Mutable
+    private Set<MobEntity> loadedMobs = ConcurrentCollections.newHashSet();
 
     @Shadow
     @Final
+    @Mutable
     private ObjectLinkedOpenHashSet<BlockEvent> syncedBlockEventQueue = null;
 
     @Redirect(method = "<init>", at = @At(value = "NEW", target = "net/minecraft/server/world/ServerChunkManager"))
@@ -90,9 +93,8 @@ public abstract class ServerWorldMixin extends World implements StructureWorldAc
         return syncedBlockEventCLinkedQueue.addAll(c);
     }
 
-    @Redirect(method = "updateListeners",at = @At(value = "FIELD",target = "Lnet/minecraft/server/world/ServerWorld;duringListenerUpdate:Z",opcode = Opcodes.PUTFIELD))
-    private void skipSendBlockUpdatedCheck(ServerWorld instance, boolean value)
-    {
+    @Redirect(method = "updateListeners", at = @At(value = "FIELD", target = "Lnet/minecraft/server/world/ServerWorld;duringListenerUpdate:Z", opcode = Opcodes.PUTFIELD))
+    private void skipSendBlockUpdatedCheck(ServerWorld instance, boolean value) {
 
     }
 }
