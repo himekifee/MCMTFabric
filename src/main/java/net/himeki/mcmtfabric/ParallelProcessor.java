@@ -1,5 +1,6 @@
 package net.himeki.mcmtfabric;
 
+import it.unimi.dsi.fastutil.Hash;
 import net.himeki.mcmtfabric.config.BlockEntityLists;
 import net.himeki.mcmtfabric.config.GeneralConfig;
 import net.himeki.mcmtfabric.serdes.SerDesHookTypes;
@@ -8,9 +9,7 @@ import net.himeki.mcmtfabric.serdes.filter.ISerDesFilter;
 import net.himeki.mcmtfabric.serdes.pools.PostExecutePool;
 import net.minecraft.block.entity.PistonBlockEntity;
 import net.minecraft.entity.Entity;
-import net.minecraft.network.packet.s2c.play.BlockEventS2CPacket;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.world.BlockEvent;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.world.World;
 import net.minecraft.world.chunk.BlockEntityTickInvoker;
@@ -18,10 +17,7 @@ import net.minecraft.world.chunk.WorldChunk;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.util.Deque;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -32,7 +28,9 @@ public class ParallelProcessor {
 
     private static final Logger LOGGER = LogManager.getLogger();
 
-    static Phaser p;
+    static Phaser worldPhaser;
+
+    static ConcurrentHashMap<ServerWorld, Phaser> sharedPhasers = new ConcurrentHashMap<ServerWorld, Phaser>();
     static ExecutorService ex;
     static MinecraftServer mcs;
     static AtomicBoolean isTicking = new AtomicBoolean();
@@ -85,14 +83,14 @@ public class ParallelProcessor {
     static long tickStart = 0;
 
     public static void preTick(MinecraftServer server) {
-        if (p != null) {
+        if (worldPhaser != null) {
             LOGGER.warn("Multiple servers?");
             return;
         } else {
             tickStart = System.nanoTime();
             isTicking.set(true);
-            p = new Phaser();
-            p.register();
+            worldPhaser = new Phaser();
+            worldPhaser.register();
             mcs = server;
         }
     }
@@ -119,19 +117,18 @@ public class ParallelProcessor {
                 currentTasks.add(taskName);
             }
             String finalTaskName = taskName;
-            p.register();
+            worldPhaser.register();
             ex.execute(() -> {
                 try {
                     currentWorlds.incrementAndGet();
                     serverworld.tick(hasTimeLeft);
                 } finally {
-                    p.arriveAndDeregister();
+                    worldPhaser.arriveAndDeregister();
                     currentWorlds.decrementAndGet();
                     if (config.opsTracing) currentTasks.remove(finalTaskName);
                 }
             });
         }
-
     }
 
     public static long[] lastTickTime = new long[32];
@@ -143,9 +140,9 @@ public class ParallelProcessor {
             LOGGER.warn("Multiple servers?");
             return;
         } else {
-            p.arriveAndAwaitAdvance();
+            worldPhaser.arriveAndAwaitAdvance();
             isTicking.set(false);
-            p = null;
+            worldPhaser = null;
             //PostExecute logic
             Deque<Runnable> queue = PostExecutePool.POOL.getQueue();
             Iterator<Runnable> qi = queue.iterator();
@@ -155,40 +152,15 @@ public class ParallelProcessor {
                 qi.remove();
             }
             lastTickTime[lastTickTimePos] = System.nanoTime() - tickStart;
-            lastTickTimePos = (lastTickTimePos+1)%lastTickTime.length;
-            lastTickTimeFill = Math.min(lastTickTimeFill+1, lastTickTime.length-1);
+            lastTickTimePos = (lastTickTimePos + 1) % lastTickTime.length;
+            lastTickTimeFill = Math.min(lastTickTimeFill + 1, lastTickTime.length - 1);
         }
     }
 
-
-    public static void callEntityTick(Consumer<Entity> tickConsumer , Entity entityIn, ServerWorld serverworld) {
-        GeneralConfig config = MCMT.config;
-        if (config.disabled || config.disableEntity) {
-            tickConsumer.accept(entityIn);
-            return;
-        }
-        String taskName = null;
-        if (config.opsTracing) {
-            taskName = "EntityTick: " + /*entityIn.toString() + KG: Wayyy too slow. Maybe for debug but needs to be done via flag in that circumstance */ "@" + entityIn.hashCode();
-            currentTasks.add(taskName);
-        }
-        String finalTaskName = taskName;
-        p.register();
-        ex.execute(() -> {
-            try {
-                final ISerDesFilter filter = SerDesRegistry.getFilter(SerDesHookTypes.EntityTick, entityIn.getClass());
-                currentEnts.incrementAndGet();
-                if (filter != null) {
-                    filter.serialise(entityIn::tick, entityIn, entityIn.getBlockPos(), serverworld, SerDesHookTypes.EntityTick);
-                } else {
-                    tickConsumer.accept(entityIn);
-                }
-            } finally {
-                currentEnts.decrementAndGet();
-                p.arriveAndDeregister();
-                if (config.opsTracing) currentTasks.remove(finalTaskName);
-            }
-        });
+    public static void preChunkTick(ServerWorld world) {
+        Phaser phaser = new Phaser();
+        sharedPhasers.put(world, phaser);
+        phaser.register();
     }
 
     public static void callTickChunks(ServerWorld world, WorldChunk chunk, int k) {
@@ -203,17 +175,103 @@ public class ParallelProcessor {
             currentTasks.add(taskName);
         }
         String finalTaskName = taskName;
-        p.register();
+        sharedPhasers.get(world).register();
         ex.execute(() -> {
             try {
                 currentEnvs.incrementAndGet();
                 world.tickChunk(chunk, k);
             } finally {
                 currentEnvs.decrementAndGet();
-                p.arriveAndDeregister();
+                sharedPhasers.get(world).arriveAndDeregister();
                 if (config.opsTracing) currentTasks.remove(finalTaskName);
             }
         });
+    }
+
+    public static void postChunkTick(ServerWorld world) {
+        sharedPhasers.get(world).arriveAndAwaitAdvance();
+    }
+
+    public static void preEntityTick(ServerWorld world) {
+        Phaser phaser = new Phaser();
+        sharedPhasers.put(world, phaser);
+        phaser.register();
+    }
+
+    public static void callEntityTick(Consumer<Entity> tickConsumer, Entity entityIn, ServerWorld serverworld) {
+        GeneralConfig config = MCMT.config;
+        if (config.disabled || config.disableEntity) {
+            tickConsumer.accept(entityIn);
+            return;
+        }
+        String taskName = null;
+        if (config.opsTracing) {
+            taskName = "EntityTick: " + /*entityIn.toString() + KG: Wayyy too slow. Maybe for debug but needs to be done via flag in that circumstance */ "@" + entityIn.hashCode();
+            currentTasks.add(taskName);
+        }
+        String finalTaskName = taskName;
+        sharedPhasers.get(serverworld).register();
+        ex.execute(() -> {
+            try {
+                final ISerDesFilter filter = SerDesRegistry.getFilter(SerDesHookTypes.EntityTick, entityIn.getClass());
+                currentEnts.incrementAndGet();
+                if (filter != null) {
+                    filter.serialise(() -> tickConsumer.accept(entityIn), entityIn, entityIn.getBlockPos(), serverworld, SerDesHookTypes.EntityTick);
+                } else {
+                    tickConsumer.accept(entityIn);
+                }
+            } finally {
+                currentEnts.decrementAndGet();
+                sharedPhasers.get(serverworld).arriveAndDeregister();
+                if (config.opsTracing) currentTasks.remove(finalTaskName);
+            }
+        });
+    }
+
+    public static void postEntityTick(ServerWorld world) {
+        sharedPhasers.get(world).arriveAndAwaitAdvance();
+    }
+
+    public static void preBlockEntityTick(ServerWorld world) {
+        Phaser phaser = new Phaser();
+        sharedPhasers.put(world, phaser);
+        phaser.register();
+    }
+
+    public static void callBlockEntityTick(BlockEntityTickInvoker tte, World world) {
+        if ((world instanceof ServerWorld)) {
+            GeneralConfig config = MCMT.config;
+            if (config.disabled || config.disableTileEntity) {
+                tte.tick();
+                return;
+            }
+            String taskName = null;
+            if (config.opsTracing) {
+                taskName = "TETick: " + tte.toString() + "@" + tte.hashCode();
+                currentTasks.add(taskName);
+            }
+            String finalTaskName = taskName;
+            sharedPhasers.get(world).register();
+            ex.execute(() -> {
+                try {
+//                final boolean doLock = filterTE(tte);
+                    final ISerDesFilter filter = SerDesRegistry.getFilter(SerDesHookTypes.TETick, tte.getClass());
+                    currentTEs.incrementAndGet();
+                    if (filter != null) {
+                        filter.serialise(tte::tick, tte, tte.getPos(), world, SerDesHookTypes.TETick);
+                    } else {
+                        tte.tick();
+                    }
+                } catch (Exception e) {
+                    System.err.println("Exception ticking TE at " + tte.getPos());
+                    e.printStackTrace();
+                } finally {
+                    currentTEs.decrementAndGet();
+                    sharedPhasers.get(world).arriveAndDeregister();
+                    if (config.opsTracing) currentTasks.remove(finalTaskName);
+                }
+            });
+        }
     }
 
     public static boolean filterTE(BlockEntityTickInvoker tte) {
@@ -235,62 +293,8 @@ public class ParallelProcessor {
         return isLocking;
     }
 
-    public static void callTileEntityTick(BlockEntityTickInvoker tte, World world) {
-        GeneralConfig config = MCMT.config;
-        if (config.disabled || config.disableTileEntity || !(world instanceof ServerWorld)) {
-            tte.tick();
-            return;
-        }
-        String taskName = null;
-        if (config.opsTracing) {
-            taskName = "TETick: " + tte.toString() + "@" + tte.hashCode();
-            currentTasks.add(taskName);
-        }
-        String finalTaskName = taskName;
-        p.register();
-        ex.execute(() -> {
-            try {
-//                final boolean doLock = filterTE(tte);
-                final ISerDesFilter filter = SerDesRegistry.getFilter(SerDesHookTypes.TETick, tte.getClass());
-                currentTEs.incrementAndGet();
-                if (filter != null) {
-                    filter.serialise(tte::tick, tte, tte.getPos(), world, SerDesHookTypes.TETick);
-                } else {
-                    tte.tick();
-                }
-            } catch (Exception e) {
-                System.err.println("Exception ticking TE at " + tte.getPos());
-                e.printStackTrace();
-            } finally {
-                currentTEs.decrementAndGet();
-                p.arriveAndDeregister();
-                if (config.opsTracing) currentTasks.remove(finalTaskName);
-            }
-        });
-    }
-
-//    public static <T> void fixSTL(ServerTickScheduler<T> stl, Set<ScheduledTick<T>> scheduledTickActionsInOrder, Set<ScheduledTick<T>> scheduledTickActions) {
-//        LOGGER.debug("FixSTL Called");
-//        scheduledTickActionsInOrder.addAll(scheduledTickActions);
-//    }
-
-    public static void sendQueuedBlockEvents(Deque<BlockEvent> d, ServerWorld sw) {
-        Iterator<BlockEvent> bed = d.iterator();
-        while (bed.hasNext()) {
-            BlockEvent BlockEvent = bed.next();
-            if (sw.processBlockEvent(BlockEvent)) {
-                /* 1.16.1 code; AKA the only thing that changed  */
-                sw.getServer().getPlayerManager().sendToAround(null, BlockEvent.pos().getX(), BlockEvent.pos().getY(), BlockEvent.pos().getZ(), 64.0D, sw.getRegistryKey(), new BlockEventS2CPacket(BlockEvent.pos(), BlockEvent.block(), BlockEvent.type(), BlockEvent.data()));
-                /* */
-				/* 1.15.2 code; AKA the only thing that changed
-				sw.getServer().getPlayerList().sendToAllNearExcept((PlayerEntity)null, (double)BlockEvent.getPosition().getX(), (double)BlockEvent.getPosition().getY(), (double)BlockEvent.getPosition().getZ(), 64.0D, sw.getDimension().getType(), new SBlockActionPacket(BlockEvent.getPosition(), BlockEvent.getBlock(), BlockEvent.getEventID(), BlockEvent.getEventParameter()));
-				/* */
-            }
-            if (!isTicking.get()) {
-                LOGGER.fatal("Block updates outside of tick");
-            }
-            bed.remove();
-        }
+    public static void postBlockEntityTick(ServerWorld world) {
+        sharedPhasers.get(world).arriveAndAwaitAdvance();
     }
 
     public static boolean shouldThreadChunks() {

@@ -32,59 +32,61 @@ public class ConfigCommand {
     public static ArgumentBuilder<ServerCommandSource, ?> registerConfig(LiteralArgumentBuilder<ServerCommandSource> root) {
         GeneralConfig config = MCMT.config;
         return root.then(literal("toggle").requires(cmdSrc -> {
-            return cmdSrc.hasPermissionLevel(2);
-        }).executes(cmdCtx -> {
-            config.disabled = !config.disabled;
-            LiteralText message = new LiteralText(
-                    "MCMT is now " + (config.disabled ? "disabled" : "enabled"));
-            cmdCtx.getSource().sendFeedback(message, true);
-            return 1;
-        }).then(literal("te").executes(cmdCtx -> {
-            config.disableTileEntity = !config.disableTileEntity;
-            LiteralText message = new LiteralText("MCMT's tile entity threading is now "
-                    + (config.disableTileEntity ? "disabled" : "enabled")) {
-            };
-            cmdCtx.getSource().sendFeedback(message, true);
-            return 1;
-        })).then(literal("entity").executes(cmdCtx -> {
-            config.disableEntity = !config.disableEntity;
-            LiteralText message = new LiteralText(
-                    "MCMT's entity threading is now " + (config.disableEntity ? "disabled" : "enabled"));
-            cmdCtx.getSource().sendFeedback(message, true);
-            return 1;
-        })).then(literal("environment").executes(cmdCtx -> {
-            config.disableEnvironment = !config.disableEnvironment;
-            LiteralText message = new LiteralText("MCMT's environment threading is now "
-                    + (config.disableEnvironment ? "disabled" : "enabled"));
-            cmdCtx.getSource().sendFeedback(message, true);
-            return 1;
-        })).then(literal("world").executes(cmdCtx -> {
-            config.disableWorld = !config.disableWorld;
-            LiteralText message = new LiteralText(
-                    "MCMT's world threading is now " + (config.disableWorld ? "disabled" : "enabled"));
-            cmdCtx.getSource().sendFeedback(message, true);
-            return 1;
-        })).then(literal("chunkprovider").executes(cmdCtx -> {
-            config.disableChunkProvider = !config.disableChunkProvider;
-            LiteralText message = new LiteralText(
-                    "MCMT's SCP threading is now " + (config.disableChunkProvider ? "disabled" : "enabled"));
-            cmdCtx.getSource().sendFeedback(message, true);
-            return 1;
-        }))).then(literal("state").executes(cmdCtx -> {
-            StringBuilder messageString = new StringBuilder(
-                    "MCMT is currently " + (config.disabled ? "disabled" : "enabled"));
-            if (!config.disabled) {
-                messageString.append(" World:" + (config.disableWorld ? "disabled" : "enabled"));
-                messageString.append(" Entity:" + (config.disableEntity ? "disabled" : "enabled"));
-                messageString.append(" TE:" + (config.disableTileEntity ? "disabled"
-                        : "enabled" + (config.chunkLockModded ? "(ChunkLocking Modded)" : "")));
-                messageString.append(" Env:" + (config.disableEnvironment ? "disabled" : "enabled"));
-                messageString.append(" SCP:" + (config.disableChunkProvider ? "disabled" : "enabled"));
-            }
-            LiteralText message = new LiteralText(messageString.toString());
-            cmdCtx.getSource().sendFeedback(message, true);
-            return 1;
-        }))
+                            return cmdSrc.hasPermissionLevel(2);
+                        }).executes(cmdCtx -> {
+                            config.disabled = !config.disabled;
+                            LiteralText message = new LiteralText(
+                                    "MCMT is now " + (config.disabled ? "disabled" : "enabled"));
+                            cmdCtx.getSource().sendFeedback(message, true);
+                            return 1;
+                        }).then(literal("te").executes(cmdCtx -> {
+                            config.disableTileEntity = !config.disableTileEntity;
+                            LiteralText message = new LiteralText("MCMT's tile entity threading is now "
+                                    + (config.disableTileEntity ? "disabled" : "enabled")) {
+                            };
+                            cmdCtx.getSource().sendFeedback(message, true);
+                            return 1;
+                        })).then(literal("entity").executes(cmdCtx -> {
+                            config.disableEntity = !config.disableEntity;
+                            LiteralText message = new LiteralText(
+                                    "MCMT's entity threading is now " + (config.disableEntity ? "disabled" : "enabled"));
+                            cmdCtx.getSource().sendFeedback(message, true);
+                            return 1;
+                        })).then(literal("environment").executes(cmdCtx -> {
+                            config.disableEnvironment = !config.disableEnvironment;
+                            LiteralText message = new LiteralText("MCMT's environment threading is now "
+                                    + (config.disableEnvironment ? "disabled" : "enabled"));
+                            cmdCtx.getSource().sendFeedback(message, true);
+                            return 1;
+                        })).then(literal("world").executes(cmdCtx -> {
+                            config.disableWorld = !config.disableWorld;
+                            LiteralText message = new LiteralText(
+                                    "MCMT's world threading is now " + (config.disableWorld ? "disabled" : "enabled"));
+                            cmdCtx.getSource().sendFeedback(message, true);
+                            return 1;
+                        })).then(literal("ops").executes(cmdCtx -> {
+                            config.opsTracing = !config.opsTracing;
+                            LiteralText message = new LiteralText(
+                                    "MCMT's ops tracing is now " + (!config.opsTracing ? "disabled" : "enabled"));
+                            cmdCtx.getSource().sendFeedback(message, true);
+                            return 1;
+                        }))
+                )
+                .then(literal("state").executes(cmdCtx -> {
+                    StringBuilder messageString = new StringBuilder(
+                            "MCMT is currently " + (config.disabled ? "disabled" : "enabled"));
+                    if (!config.disabled) {
+                        messageString.append(" World:" + (config.disableWorld ? "disabled" : "enabled"));
+                        messageString.append(" Entity:" + (config.disableEntity ? "disabled" : "enabled"));
+                        messageString.append(" TE:" + (config.disableTileEntity ? "disabled"
+                                : "enabled" + (config.chunkLockModded ? "(ChunkLocking Modded)" : "")));
+                        messageString.append(" Env:" + (config.disableEnvironment ? "disabled" : "enabled"));
+                        messageString.append(" SCP:" + (config.disableChunkProvider ? "disabled" : "enabled"));
+                    }
+                    LiteralText message = new LiteralText(messageString.toString());
+                    cmdCtx.getSource().sendFeedback(message, true);
+                    return 1;
+                }))
                 .then(literal("save").requires(cmdSrc -> {
                     return cmdSrc.hasPermissionLevel(2);
                 }).executes(cmdCtx -> {
@@ -121,8 +123,7 @@ public class ConfigCommand {
                                         BlockPos bp = ((BlockHitResult) htr).getBlockPos();
                                         BlockEntity te = cmdCtx.getSource().getWorld().getBlockEntity(bp);
                                         if (te != null && isTickableBe(te)) {
-                                            if (config.teWhiteListString.contains(te.getClass().getName()))
-                                            {
+                                            if (config.teWhiteListString.contains(te.getClass().getName())) {
                                                 message = new LiteralText("Class " + te.getClass().getName() + " already exists in TE Whitelist");
                                                 cmdCtx.getSource().sendFeedback(message, true);
                                                 return 0;
@@ -149,8 +150,7 @@ public class ConfigCommand {
                                         BlockPos bp = ((BlockHitResult) htr).getBlockPos();
                                         BlockEntity te = cmdCtx.getSource().getWorld().getBlockEntity(bp);
                                         if (te != null && isTickableBe(te)) {
-                                            if (config.teBlackListString.contains(te.getClass().getName()))
-                                            {
+                                            if (config.teBlackListString.contains(te.getClass().getName())) {
                                                 message = new LiteralText("Class " + te.getClass().getName() + " already exists in TE Blacklist");
                                                 cmdCtx.getSource().sendFeedback(message, true);
                                                 return 0;

@@ -20,7 +20,7 @@ public abstract class WorldMixin implements WorldAccess, AutoCloseable {
 
     @Redirect(method = "tickBlockEntities", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/chunk/BlockEntityTickInvoker;tick()V"))
     private void overwriteTick(BlockEntityTickInvoker blockEntityTickInvoker) {
-        ParallelProcessor.callTileEntityTick(blockEntityTickInvoker, (World) (Object) this);
+        ParallelProcessor.callBlockEntityTick(blockEntityTickInvoker, (World) (Object) this);
     }
 
     @Redirect(method = "getBlockEntity", at = @At(value = "INVOKE", target = "Ljava/lang/Thread;currentThread()Ljava/lang/Thread;"))
