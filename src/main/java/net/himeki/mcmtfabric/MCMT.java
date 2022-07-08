@@ -31,7 +31,7 @@ public class MCMT implements ModInitializer {
             return ActionResult.SUCCESS;
         });
         holder.load();  // Load again to run loadTELists() handler
-        config= holder.getConfig();
+        config = holder.getConfig();
 
         if (System.getProperty("jmt.mcmt.jmx") != null) {
             JMXRegistration.register();

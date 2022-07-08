@@ -29,7 +29,7 @@ public class ParallelProcessor {
 
     static Phaser worldPhaser;
 
-    static ConcurrentHashMap<ServerWorld, Phaser> sharedPhasers = new ConcurrentHashMap<ServerWorld, Phaser>();
+    static ConcurrentHashMap<ServerWorld, Phaser> sharedPhasers = new ConcurrentHashMap<>();
     static ExecutorService ex;
     static MinecraftServer mcs;
     static AtomicBoolean isTicking = new AtomicBoolean();
@@ -80,22 +80,24 @@ public class ParallelProcessor {
     }
 
     static long tickStart = 0;
+    static GeneralConfig config;
 
-    public static void preTick(MinecraftServer server) {
-        if (worldPhaser != null) {
-            LOGGER.warn("Multiple servers?");
-            return;
-        } else {
-            tickStart = System.nanoTime();
-            isTicking.set(true);
-            worldPhaser = new Phaser();
-            worldPhaser.register();
-            mcs = server;
+    public static void preTick(int size, MinecraftServer server) {
+        config = MCMT.config; // Load when config are loaded. Static loads before config update.
+        if (!config.disabled && !config.disableWorld) {
+            if (worldPhaser != null) {
+                LOGGER.warn("Multiple servers?");
+                return;
+            } else {
+                tickStart = System.nanoTime();
+                isTicking.set(true);
+                worldPhaser = new Phaser(size + 1);
+                mcs = server;
+            }
         }
     }
 
     public static void callTick(ServerWorld serverworld, BooleanSupplier hasTimeLeft, MinecraftServer server) {
-        GeneralConfig config = MCMT.config;
         if (config.disabled || config.disableWorld) {
             try {
                 serverworld.tick(hasTimeLeft);
@@ -116,7 +118,6 @@ public class ParallelProcessor {
                 currentTasks.add(taskName);
             }
             String finalTaskName = taskName;
-            worldPhaser.register();
             ex.execute(() -> {
                 try {
                     currentWorlds.incrementAndGet();
@@ -135,36 +136,37 @@ public class ParallelProcessor {
     public static int lastTickTimeFill = 0;
 
     public static void postTick(MinecraftServer server) {
-        if (mcs != server) {
-            LOGGER.warn("Multiple servers?");
-            return;
-        } else {
-            worldPhaser.arriveAndDeregister();
-            worldPhaser.arriveAndAwaitAdvance();
-            isTicking.set(false);
-            worldPhaser = null;
-            //PostExecute logic
-            Deque<Runnable> queue = PostExecutePool.POOL.getQueue();
-            Iterator<Runnable> qi = queue.iterator();
-            while (qi.hasNext()) {
-                Runnable r = qi.next();
-                r.run();
-                qi.remove();
+        if (!config.disabled && !config.disableWorld) {
+            if (mcs != server) {
+                LOGGER.warn("Multiple servers?");
+                return;
+            } else {
+                worldPhaser.arriveAndAwaitAdvance();
+                isTicking.set(false);
+                worldPhaser = null;
+                //PostExecute logic
+                Deque<Runnable> queue = PostExecutePool.POOL.getQueue();
+                Iterator<Runnable> qi = queue.iterator();
+                while (qi.hasNext()) {
+                    Runnable r = qi.next();
+                    r.run();
+                    qi.remove();
+                }
+                lastTickTime[lastTickTimePos] = System.nanoTime() - tickStart;
+                lastTickTimePos = (lastTickTimePos + 1) % lastTickTime.length;
+                lastTickTimeFill = Math.min(lastTickTimeFill + 1, lastTickTime.length - 1);
             }
-            lastTickTime[lastTickTimePos] = System.nanoTime() - tickStart;
-            lastTickTimePos = (lastTickTimePos + 1) % lastTickTime.length;
-            lastTickTimeFill = Math.min(lastTickTimeFill + 1, lastTickTime.length - 1);
         }
     }
 
-    public static void preChunkTick(ServerWorld world) {
-        Phaser phaser = new Phaser();
-        sharedPhasers.put(world, phaser);
-        phaser.register();
+    public static void preChunkTick(int size, ServerWorld world) {
+        if (!config.disabled && !config.disableMultiChunk) {
+            Phaser phaser = new Phaser(size + 1);   // Keep a party throughout 3 ticking phases
+            sharedPhasers.put(world, phaser);
+        }
     }
 
     public static void callTickChunks(ServerWorld world, WorldChunk chunk, int k) {
-        GeneralConfig config = MCMT.config;
         if (config.disabled || config.disableEnvironment) {
             world.tickChunk(chunk, k);
             return;
@@ -175,31 +177,31 @@ public class ParallelProcessor {
             currentTasks.add(taskName);
         }
         String finalTaskName = taskName;
-        sharedPhasers.get(world).register();
         ex.execute(() -> {
             try {
                 currentEnvs.incrementAndGet();
                 world.tickChunk(chunk, k);
             } finally {
-                currentEnvs.decrementAndGet();
                 sharedPhasers.get(world).arriveAndDeregister();
+                currentEnvs.decrementAndGet();
                 if (config.opsTracing) currentTasks.remove(finalTaskName);
             }
         });
     }
 
-    public static void postChunkTick(ServerWorld world) {
-        Phaser p = sharedPhasers.get(world);
-        p.arriveAndDeregister();
-        p.arriveAndAwaitAdvance();
+    public static void arriveChunkPhaser(ServerWorld world) {
+        if (!config.disabled && !config.disableMultiChunk) sharedPhasers.get(world).arriveAndDeregister();
     }
 
-    public static void preEntityTick(ServerWorld world) {
-        sharedPhasers.get(world).register();
+    public static void postChunkTick(ServerWorld world) {
+        if (!config.disabled && !config.disableMultiChunk) sharedPhasers.get(world).arriveAndAwaitAdvance();
+    }
+
+    public static void preEntityTick(int size, ServerWorld world) {
+        if (!config.disabled && !config.disableEntity) sharedPhasers.get(world).bulkRegister(size);
     }
 
     public static void callEntityTick(Consumer<Entity> tickConsumer, Entity entityIn, ServerWorld serverworld) {
-        GeneralConfig config = MCMT.config;
         if (config.disabled || config.disableEntity) {
             tickConsumer.accept(entityIn);
             return;
@@ -210,7 +212,6 @@ public class ParallelProcessor {
             currentTasks.add(taskName);
         }
         String finalTaskName = taskName;
-        sharedPhasers.get(serverworld).register();
         ex.execute(() -> {
             try {
                 final ISerDesFilter filter = SerDesRegistry.getFilter(SerDesHookTypes.EntityTick, entityIn.getClass());
@@ -221,26 +222,27 @@ public class ParallelProcessor {
                     tickConsumer.accept(entityIn);
                 }
             } finally {
-                currentEnts.decrementAndGet();
                 sharedPhasers.get(serverworld).arriveAndDeregister();
+                currentEnts.decrementAndGet();
                 if (config.opsTracing) currentTasks.remove(finalTaskName);
             }
         });
     }
 
-    public static void postEntityTick(ServerWorld world) {
-        Phaser p = sharedPhasers.get(world);
-        p.arriveAndDeregister();
-        p.arriveAndAwaitAdvance();
+    public static void arriveEntityPhaser(ServerWorld world) {
+        if (!config.disabled && !config.disableEntity) sharedPhasers.get(world).arriveAndDeregister();
     }
 
-    public static void preBlockEntityTick(ServerWorld world) {
-        sharedPhasers.get(world).register();
+    public static void postEntityTick(ServerWorld world) {
+        if (!config.disabled && !config.disableEntity) sharedPhasers.get(world).arriveAndAwaitAdvance();
+    }
+
+    public static void preBlockEntityTick(int size, ServerWorld world) {
+        if (!config.disabled && !config.disableTileEntity) sharedPhasers.get(world).bulkRegister(size);
     }
 
     public static void callBlockEntityTick(BlockEntityTickInvoker tte, World world) {
         if ((world instanceof ServerWorld)) {
-            GeneralConfig config = MCMT.config;
             if (config.disabled || config.disableTileEntity) {
                 tte.tick();
                 return;
@@ -251,10 +253,8 @@ public class ParallelProcessor {
                 currentTasks.add(taskName);
             }
             String finalTaskName = taskName;
-            sharedPhasers.get(world).register();
             ex.execute(() -> {
                 try {
-//                final boolean doLock = filterTE(tte);
                     final ISerDesFilter filter = SerDesRegistry.getFilter(SerDesHookTypes.TETick, tte.getClass());
                     currentTEs.incrementAndGet();
                     if (filter != null) {
@@ -266,8 +266,8 @@ public class ParallelProcessor {
                     System.err.println("Exception ticking TE at " + tte.getPos());
                     e.printStackTrace();
                 } finally {
-                    currentTEs.decrementAndGet();
                     sharedPhasers.get(world).arriveAndDeregister();
+                    currentTEs.decrementAndGet();
                     if (config.opsTracing) currentTasks.remove(finalTaskName);
                 }
             });
@@ -275,7 +275,6 @@ public class ParallelProcessor {
     }
 
     public static boolean filterTE(BlockEntityTickInvoker tte) {
-        GeneralConfig config = MCMT.config;
         boolean isLocking = false;
         if (BlockEntityLists.teBlackList.contains(tte.getClass())) {
             isLocking = true;
@@ -293,10 +292,12 @@ public class ParallelProcessor {
         return isLocking;
     }
 
+    public static void arriveBlockEntityPhaser(ServerWorld world) {
+        if (!config.disabled && !config.disableTileEntity) sharedPhasers.get(world).arriveAndDeregister();
+    }
+
     public static void postBlockEntityTick(ServerWorld world) {
-        Phaser p = sharedPhasers.get(world);
-        p.arriveAndDeregister();
-        p.arriveAndAwaitAdvance();
+        if (!config.disabled && !config.disableTileEntity) sharedPhasers.get(world).arriveAndAwaitAdvance();
     }
 
     public static boolean shouldThreadChunks() {

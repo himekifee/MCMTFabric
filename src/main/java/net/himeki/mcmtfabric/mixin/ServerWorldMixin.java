@@ -15,6 +15,7 @@ import net.minecraft.structure.StructureManager;
 import net.minecraft.util.profiler.Profiler;
 import net.minecraft.util.registry.RegistryEntry;
 import net.minecraft.util.registry.RegistryKey;
+import net.minecraft.world.EntityList;
 import net.minecraft.world.MutableWorldProperties;
 import net.minecraft.world.StructureWorldAccess;
 import net.minecraft.world.World;
@@ -30,12 +31,14 @@ import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
+import org.spongepowered.asm.mixin.injection.Slice;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.Collection;
 import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.Executor;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -60,6 +63,9 @@ public abstract class ServerWorldMixin extends World implements StructureWorldAc
     @Mutable
     private ObjectLinkedOpenHashSet<BlockEvent> syncedBlockEventQueue = null;
 
+    @Shadow
+    @Final
+    private EntityList entityList;
     ServerWorld thisWorld = (ServerWorld) (Object) this;
 
     @Redirect(method = "<init>", at = @At(value = "NEW", target = "net/minecraft/server/world/ServerChunkManager"))
@@ -67,24 +73,21 @@ public abstract class ServerWorldMixin extends World implements StructureWorldAc
         return new ParaServerChunkProvider(world, session, dataFixer, structureManager, workerExecutor, chunkGenerator, viewDistance, simulationDistance, dsync, worldGenerationProgressListener, chunkStatusChangeListener, persistentStateManagerFactory);
     }
 
-    @Redirect(method = "tick", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/world/ServerChunkManager;tick(Ljava/util/function/BooleanSupplier;Z)V"))
-    private void prePostChunkTick(ServerChunkManager instance, BooleanSupplier shouldKeepTicking, boolean tickChunks) {
-        ParallelProcessor.preChunkTick(thisWorld);
-        instance.tick(shouldKeepTicking, tickChunks);
+    @Inject(method = "tick", at = @At(value = "INVOKE", target = "Lnet/minecraft/util/profiler/Profiler;swap(Ljava/lang/String;)V", ordinal = 5))
+    private void postChunkTick(BooleanSupplier shouldKeepTicking, CallbackInfo ci) {
         ParallelProcessor.postChunkTick(thisWorld);
     }
 
-    @Inject(method = "tick", at = @At(value = "INVOKE", target = "Lnet/minecraft/util/profiler/Profiler;push(Ljava/lang/String;)V",ordinal = 2))
+    @Inject(method = "tick", at = @At(value = "INVOKE", target = "Lnet/minecraft/util/profiler/Profiler;push(Ljava/lang/String;)V", ordinal = 2))
     private void preEntityTick(BooleanSupplier shouldKeepTicking, CallbackInfo ci) {
-        ParallelProcessor.preEntityTick(thisWorld);
+        AtomicInteger counter = new AtomicInteger(0);
+        this.entityList.forEach(e -> counter.incrementAndGet());
+        ParallelProcessor.preEntityTick(counter.intValue(), thisWorld);
     }
 
-    @Redirect(method = "tick", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/world/ServerWorld;tickBlockEntities()V"))
-    private void postEntityPrePostBlockEntityTick(ServerWorld instance) {
-        ParallelProcessor.postEntityTick(thisWorld);
-        ParallelProcessor.preBlockEntityTick(thisWorld);
-        instance.tickBlockEntities();
-        ParallelProcessor.postBlockEntityTick(thisWorld);
+    @Inject(method = "method_31420", slice = @Slice(to = @At(value = "TAIL", shift = At.Shift.BEFORE)), at = @At("RETURN"))
+    private void arriveEntityPhaser(Profiler profiler, Entity entity, CallbackInfo ci) {
+        ParallelProcessor.arriveEntityPhaser(thisWorld);
     }
 
     @Redirect(method = "method_31420", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/world/ServerWorld;tickEntity(Ljava/util/function/Consumer;Lnet/minecraft/entity/Entity;)V"))

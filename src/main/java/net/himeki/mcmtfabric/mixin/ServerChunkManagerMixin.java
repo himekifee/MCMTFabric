@@ -1,5 +1,6 @@
 package net.himeki.mcmtfabric.mixin;
 
+import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import com.mojang.datafixers.util.Either;
 import net.himeki.mcmtfabric.DebugHookTerminator;
 import net.himeki.mcmtfabric.ParallelProcessor;
@@ -21,6 +22,8 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import org.spongepowered.asm.mixin.injection.callback.LocalCapture;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 
@@ -31,9 +34,34 @@ public abstract class ServerChunkManagerMixin extends ChunkManager {
     @Final
     public ServerChunkManager.MainThreadExecutor mainThreadExecutor;
 
+    @Shadow
+    @Final
+    ServerWorld world;
+
+    @Redirect(method = "tickChunks", at = @At(value = "INVOKE", target = "Ljava/util/Collections;shuffle(Ljava/util/List;)V"))
+    private void preChunkTick(List<?> list) {
+        ParallelProcessor.preChunkTick(list.size(), this.world);
+        Collections.shuffle(list);
+    }
+
     @Redirect(method = "tickChunks", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/world/ServerWorld;tickChunk(Lnet/minecraft/world/chunk/WorldChunk;I)V"))
     private void overwriteTickChunk(ServerWorld serverWorld, WorldChunk chunk, int randomTickSpeed) {
         ParallelProcessor.callTickChunks(serverWorld, chunk, randomTickSpeed);
+    }
+
+    @ModifyExpressionValue(
+            method = "tickChunks",
+            at = {
+                    @At(value = "INVOKE", target = "Lnet/minecraft/server/world/ServerWorld;shouldTick(Lnet/minecraft/util/math/ChunkPos;)Z"),
+                    @At(value = "INVOKE", target = "Lnet/minecraft/server/world/ThreadedAnvilChunkStorage;shouldTick(Lnet/minecraft/util/math/ChunkPos;)Z"),
+                    @At(value = "INVOKE", target = "Lnet/minecraft/server/world/ServerWorld;shouldTickBlocksInChunk(J)Z")
+            }
+    )
+    private boolean continueToArrivePhaser(boolean shouldTick) {
+        if (!shouldTick) {
+            ParallelProcessor.arriveChunkPhaser(world);
+        }
+        return shouldTick;
     }
 
     @Redirect(method = {"getChunk(IILnet/minecraft/world/chunk/ChunkStatus;Z)Lnet/minecraft/world/chunk/Chunk;", "getWorldChunk"}, at = @At(value = "FIELD", target = "Lnet/minecraft/server/world/ServerChunkManager;serverThread:Ljava/lang/Thread;", opcode = Opcodes.GETFIELD))
