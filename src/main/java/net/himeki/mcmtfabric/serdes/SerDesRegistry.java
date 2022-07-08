@@ -67,7 +67,6 @@ public class SerDesRegistry {
     public static void initFilters() {
         filters.clear();
         // High Priority (I.e. non overridable)
-//        filters.add(new PistonFilter());
         filters.add(new VanillaFilter());
         filters.add(new LegacyFilter()); //TODO kill me
         // Config loaded
