@@ -7,3 +7,4 @@ Accessible method net/minecraft/server/world/ServerChunkManager getChunkHolder (
 Accessible method net/minecraft/server/world/ServerChunkManager$MainThreadExecutor runTask ()Z
 Accessible method net/minecraft/tag/ConfiguredStructureFeatureTags of (Ljava/lang/String;)Lnet/minecraft/tag/TagKey;
 Accessible method net/minecraft/world/World tickBlockEntities ()V
+Accessible class net/minecraft/server/world/ThreadedAnvilChunkStorage$EntityTracker

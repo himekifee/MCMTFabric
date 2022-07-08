@@ -1,6 +1,5 @@
 package net.himeki.mcmtfabric;
 
-import it.unimi.dsi.fastutil.Hash;
 import net.himeki.mcmtfabric.config.BlockEntityLists;
 import net.himeki.mcmtfabric.config.GeneralConfig;
 import net.himeki.mcmtfabric.serdes.SerDesHookTypes;
@@ -140,6 +139,7 @@ public class ParallelProcessor {
             LOGGER.warn("Multiple servers?");
             return;
         } else {
+            worldPhaser.arriveAndDeregister();
             worldPhaser.arriveAndAwaitAdvance();
             isTicking.set(false);
             worldPhaser = null;
@@ -189,13 +189,13 @@ public class ParallelProcessor {
     }
 
     public static void postChunkTick(ServerWorld world) {
-        sharedPhasers.get(world).arriveAndAwaitAdvance();
+        Phaser p = sharedPhasers.get(world);
+        p.arriveAndDeregister();
+        p.arriveAndAwaitAdvance();
     }
 
     public static void preEntityTick(ServerWorld world) {
-        Phaser phaser = new Phaser();
-        sharedPhasers.put(world, phaser);
-        phaser.register();
+        sharedPhasers.get(world).register();
     }
 
     public static void callEntityTick(Consumer<Entity> tickConsumer, Entity entityIn, ServerWorld serverworld) {
@@ -229,13 +229,13 @@ public class ParallelProcessor {
     }
 
     public static void postEntityTick(ServerWorld world) {
-        sharedPhasers.get(world).arriveAndAwaitAdvance();
+        Phaser p = sharedPhasers.get(world);
+        p.arriveAndDeregister();
+        p.arriveAndAwaitAdvance();
     }
 
     public static void preBlockEntityTick(ServerWorld world) {
-        Phaser phaser = new Phaser();
-        sharedPhasers.put(world, phaser);
-        phaser.register();
+        sharedPhasers.get(world).register();
     }
 
     public static void callBlockEntityTick(BlockEntityTickInvoker tte, World world) {
@@ -294,7 +294,9 @@ public class ParallelProcessor {
     }
 
     public static void postBlockEntityTick(ServerWorld world) {
-        sharedPhasers.get(world).arriveAndAwaitAdvance();
+        Phaser p = sharedPhasers.get(world);
+        p.arriveAndDeregister();
+        p.arriveAndAwaitAdvance();
     }
 
     public static boolean shouldThreadChunks() {

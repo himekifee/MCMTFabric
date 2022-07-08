@@ -20,6 +20,7 @@
     "SharedConstantsMixin",
     "SimulationDistanceLevelPropagatorMixin",
     "SyncAllMixin",
+    "ThreadedAnvilChunkStorageMixin",
     "TypeFilterableListMixin",
     "UtilMixin",
     "WorldMixin",

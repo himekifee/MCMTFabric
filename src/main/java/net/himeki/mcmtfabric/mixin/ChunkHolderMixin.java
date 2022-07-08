@@ -17,7 +17,7 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(ChunkHolder.class)
-public class ChunkHolderMixin {
+public abstract class ChunkHolderMixin {
 
     @Mutable
     @Shadow

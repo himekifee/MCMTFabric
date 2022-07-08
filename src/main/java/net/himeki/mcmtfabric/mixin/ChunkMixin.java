@@ -12,7 +12,7 @@ import org.spongepowered.asm.mixin.Shadow;
 import java.util.Map;
 
 @Mixin(Chunk.class)
-public class ChunkMixin {
+public abstract class ChunkMixin {
 
     @Shadow
     @Final
