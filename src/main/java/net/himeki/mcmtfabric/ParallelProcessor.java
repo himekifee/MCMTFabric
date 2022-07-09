@@ -160,10 +160,13 @@ public class ParallelProcessor {
     }
 
     public static void preChunkTick(int size, ServerWorld world) {
-        if (!config.disabled && !config.disableMultiChunk) {
-            Phaser phaser = new Phaser(size + 1);   // Keep a party throughout 3 ticking phases
-            sharedPhasers.put(world, phaser);
+        Phaser phaser; // Keep a party throughout 3 ticking phases
+        if (!config.disabled && !config.disableEnvironment) {
+            phaser = new Phaser(size + 1);
+        } else {
+            phaser = new Phaser(1);
         }
+        sharedPhasers.put(world, phaser);
     }
 
     public static void callTickChunks(ServerWorld world, WorldChunk chunk, int k) {
@@ -190,11 +193,11 @@ public class ParallelProcessor {
     }
 
     public static void arriveChunkPhaser(ServerWorld world) {
-        if (!config.disabled && !config.disableMultiChunk) sharedPhasers.get(world).arriveAndDeregister();
+        if (!config.disabled && !config.disableEnvironment) sharedPhasers.get(world).arriveAndDeregister();
     }
 
     public static void postChunkTick(ServerWorld world) {
-        if (!config.disabled && !config.disableMultiChunk) sharedPhasers.get(world).arriveAndAwaitAdvance();
+        if (!config.disabled && !config.disableEnvironment) sharedPhasers.get(world).arriveAndAwaitAdvance();
     }
 
     public static void preEntityTick(int size, ServerWorld world) {
