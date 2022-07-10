@@ -15,7 +15,7 @@ public class VanillaFilter implements ISerDesFilter {
 
     @Override
     public ClassMode getModeOnline(Class<?> c) {
-        if (c.getName().startsWith("net.minecraft") && !c.equals(PistonBlockEntity.class)) {
+        if (c.getName().startsWith("net.minecraft")) {
             return ClassMode.WHITELIST;
         }
         return ClassMode.UNKNOWN;

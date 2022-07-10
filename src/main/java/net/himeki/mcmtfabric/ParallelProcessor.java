@@ -245,9 +245,14 @@ public class ParallelProcessor {
     }
 
     public static void callBlockEntityTick(BlockEntityTickInvoker tte, World world) {
-        if ((world instanceof ServerWorld)) {
+        if ((world instanceof ServerWorld) && tte instanceof WorldChunk.WrappedBlockEntityTickInvoker && (((WorldChunk.WrappedBlockEntityTickInvoker) tte).wrapped instanceof WorldChunk.DirectBlockEntityTickInvoker<?>)) {
             if (config.disabled || config.disableTileEntity) {
                 tte.tick();
+                return;
+            }
+            if (((WorldChunk.DirectBlockEntityTickInvoker<?>) ((WorldChunk.WrappedBlockEntityTickInvoker) tte).wrapped).blockEntity instanceof PistonBlockEntity) {
+                tte.tick();
+                sharedPhasers.get(world).arriveAndDeregister();
                 return;
             }
             String taskName = null;
@@ -258,13 +263,10 @@ public class ParallelProcessor {
             String finalTaskName = taskName;
             ex.execute(() -> {
                 try {
-                    final ISerDesFilter filter = SerDesRegistry.getFilter(SerDesHookTypes.TETick, tte.getClass());
+                    final ISerDesFilter filter = SerDesRegistry.getFilter(SerDesHookTypes.TETick, ((WorldChunk.WrappedBlockEntityTickInvoker) tte).wrapped.getClass());
                     currentTEs.incrementAndGet();
-                    if (filter != null) {
-                        filter.serialise(tte::tick, tte, tte.getPos(), world, SerDesHookTypes.TETick);
-                    } else {
-                        tte.tick();
-                    }
+                    if (filter != null) filter.serialise(tte::tick, tte, tte.getPos(), world, SerDesHookTypes.TETick);
+                    else tte.tick();
                 } catch (Exception e) {
                     System.err.println("Exception ticking TE at " + tte.getPos());
                     e.printStackTrace();
@@ -274,7 +276,7 @@ public class ParallelProcessor {
                     if (config.opsTracing) currentTasks.remove(finalTaskName);
                 }
             });
-        }
+        } else tte.tick();
     }
 
     public static boolean filterTE(BlockEntityTickInvoker tte) {
