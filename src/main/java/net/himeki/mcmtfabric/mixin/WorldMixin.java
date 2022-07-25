@@ -2,6 +2,7 @@ package net.himeki.mcmtfabric.mixin;
 
 import net.himeki.mcmtfabric.ParallelProcessor;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import net.minecraft.world.WorldAccess;
 import net.minecraft.world.chunk.BlockEntityTickInvoker;
@@ -47,9 +48,9 @@ public abstract class WorldMixin implements WorldAccess, AutoCloseable {
         return bl;
     }
 
-    @Redirect(method = "tickBlockEntities", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/World;shouldTickBlocksInChunk(J)Z"))
-    private boolean continueToArrivePhaser1(World instance, long chunkPos) {
-        boolean bl = instance.shouldTickBlocksInChunk(chunkPos);
+    @Redirect(method = "tickBlockEntities", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/World;shouldTickBlockPos(Lnet/minecraft/util/math/BlockPos;)Z"))
+    private boolean continueToArrivePhaser1(World instance, BlockPos pos) {
+        boolean bl = instance.shouldTickBlockPos(pos);
         if ((Object) this instanceof ServerWorld) {
             if (!bl) {
                 ParallelProcessor.arriveBlockEntityPhaser((ServerWorld) (Object) this);

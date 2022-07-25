@@ -4,6 +4,8 @@
   "package": "net.himeki.mcmtfabric.mixin",
   "compatibilityLevel": "JAVA_16",
   "mixins": [
+    "ChainRestrictedNeighborUpdaterMixin",
+    "CheckedRandomMixin",
     "ChunkHolderMixin",
     "ChunkMixin",
     "ChunkTicketManagerMixin",

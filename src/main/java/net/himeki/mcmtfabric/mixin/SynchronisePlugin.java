@@ -24,7 +24,7 @@ public class SynchronisePlugin implements IMixinConfigPlugin {
 
     @Override
     public void onLoad(String mixinPackage) {
-//        MappingResolver mappingResolver = FabricLoader.getInstance().getMappingResolver();
+        MappingResolver mappingResolver = FabricLoader.getInstance().getMappingResolver();
 //        mixin2MethodsMap.put("net.himeki.mcmtfabric.mixin.ServerChunkManagerMixin", mappingResolver.mapMethodName("intermediary", "net.minecraft.class_3215", "method_14161", "()V"));
 //        mixin2MethodsMap.put("net.himeki.mcmtfabric.mixin.ServerTickSchedulerMixin", mappingResolver.mapMethodName("intermediary", "net.minecraft.class_1949", "method_8670", "()V"));
 //        mixin2MethodsMap.put("net.himeki.mcmtfabric.mixin.ServerTickSchedulerMixin", mappingResolver.mapMethodName("intermediary", "net.minecraft.class_1949", "method_20514", "(Lnet/minecraft/class_1954;)V"));
@@ -32,11 +32,13 @@ public class SynchronisePlugin implements IMixinConfigPlugin {
 //        mixin2MethodsMap.put("net.himeki.mcmtfabric.mixin.ServerWorldMixin", mappingResolver.mapMethodName("intermediary", "net.minecraft.class_1937", "method_19282", "(Lnet/minecraft/class_2338;Lnet/minecraft/class_2680;Lnet/minecraft/class_2680;)V"));
 //        mixin2MethodsMap.put("net.himeki.mcmtfabric.mixin.LevelPropagatorMixin", mappingResolver.mapMethodName("intermediary", "net.minecraft.class_3554", "method_15492", "(I)I"));
 //        mixin2MethodsMap.put("net.himeki.mcmtfabric.mixin.LevelPropagatorMixin", mappingResolver.mapMethodName("intermediary", "net.minecraft.class_3554", "method_15478", "(JJIZ)V"));
+        mixin2MethodsMap.put("net.himeki.mcmtfabric.mixin.ChainRestrictedNeighborUpdaterMixin", mappingResolver.mapMethodName("intermediary", "net.minecraft.class_7159", "method_41706", "(Lnet/minecraft/class_2338;Lnet/minecraft/class_7159$class_7162;)V"));
 
 
 
         syncAllSet.add("net.himeki.mcmtfabric.mixin.FastUtilsMixin");
         syncAllSet.add("net.himeki.mcmtfabric.mixin.SyncAllMixin");
+        syncAllSet.add("net.himeki.mcmtfabric.mixin.CheckedRandomMixin");   // For some reason the mapping does not cover next() so sync all for now
 
     }
 

@@ -1,14 +1,12 @@
 package net.himeki.mcmtfabric.parallelised;
 
 import com.mojang.datafixers.DataFixer;
-import me.shedaniel.autoconfig.AutoConfig;
 import net.himeki.mcmtfabric.MCMT;
 import net.himeki.mcmtfabric.ParallelProcessor;
-import net.himeki.mcmtfabric.config.GeneralConfig;
 import net.minecraft.server.WorldGenerationProgressListener;
 import net.minecraft.server.world.ServerChunkManager;
 import net.minecraft.server.world.ServerWorld;
-import net.minecraft.structure.StructureManager;
+import net.minecraft.structure.StructureTemplateManager;
 import net.minecraft.util.math.ChunkPos;
 import net.minecraft.world.PersistentStateManager;
 import net.minecraft.world.World;
@@ -57,8 +55,8 @@ public class ParaServerChunkProvider extends ServerChunkManager {
     private final World world;
 
     /* 1.16.1 code; AKA the only thing that changed  */
-    public ParaServerChunkProvider(ServerWorld world, LevelStorage.Session session, DataFixer dataFixer, StructureManager structureManager, Executor workerExecutor, ChunkGenerator chunkGenerator, int viewDistance, int simulationDistance, boolean dsync, WorldGenerationProgressListener worldGenerationProgressListener, ChunkStatusChangeListener chunkStatusChangeListener, Supplier persistentStateManagerFactory) {
-        super(world,session,dataFixer,structureManager,workerExecutor,chunkGenerator,viewDistance,simulationDistance,dsync,worldGenerationProgressListener, chunkStatusChangeListener,persistentStateManagerFactory);
+    public ParaServerChunkProvider(ServerWorld world, LevelStorage.Session session, DataFixer dataFixer, StructureTemplateManager structureManager, Executor workerExecutor, ChunkGenerator chunkGenerator, int viewDistance, int simulationDistance, boolean dsync, WorldGenerationProgressListener worldGenerationProgressListener, ChunkStatusChangeListener chunkStatusChangeListener, Supplier<PersistentStateManager> persistentStateManagerFactory) {
+        super(world, session, dataFixer, structureManager, workerExecutor, chunkGenerator, viewDistance, simulationDistance, dsync, worldGenerationProgressListener, chunkStatusChangeListener, persistentStateManagerFactory);
         this.world = world;
         cacheThread = new Thread(this::chunkCacheCleanup, "Chunk Cache Cleaner " + world.getRegistryKey().getValue().getPath());
         cacheThread.start();
@@ -140,7 +138,7 @@ public class ParaServerChunkProvider extends ServerChunkManager {
     public Chunk lookupChunk(long chunkPos, ChunkStatus status, boolean compute) {
         int oldAccess = access.getAndIncrement();
         if (access.get() < oldAccess) { // overflow
-        	clearCache();
+            clearCache();
             return null;
         }
         ChunkCacheLine ccl;
@@ -156,7 +154,7 @@ public class ParaServerChunkProvider extends ServerChunkManager {
     public void cacheChunk(long chunkPos, Chunk chunk, ChunkStatus status) {
         long oldAccess = access.getAndIncrement();
         if (access.get() < oldAccess) { // overflow
-        	clearCache();
+            clearCache();
         }
 
         ChunkCacheLine ccl;
@@ -184,17 +182,17 @@ public class ParaServerChunkProvider extends ServerChunkManager {
                 e.printStackTrace();
             }
 
-        	clearCache();
+            clearCache();
         }
         log.debug(chunkCleaner, "ChunkCleaner terminating");
     }
 
     public void clearCache() {
-    	//log.info("Clearing Chunk Cache; Size: " + chunkCache.size());
+        //log.info("Clearing Chunk Cache; Size: " + chunkCache.size());
         chunkCache.clear(); // Doesn't resize but that's typically good
     }
 
-     protected class ChunkCacheAddress {
+    protected class ChunkCacheAddress {
         protected long chunk_pos;
         protected int status;
         protected int hash;
@@ -208,24 +206,24 @@ public class ParaServerChunkProvider extends ServerChunkManager {
 
         @Override
         public int hashCode() {
-        	return hash;
+            return hash;
         }
 
         @Override
         public boolean equals(Object obj) {
-        	return (obj instanceof ChunkCacheAddress)
-        			&& ((ChunkCacheAddress) obj).status == this.status
-        			&& ((ChunkCacheAddress) obj).chunk_pos == this.chunk_pos;
+            return (obj instanceof ChunkCacheAddress)
+                    && ((ChunkCacheAddress) obj).status == this.status
+                    && ((ChunkCacheAddress) obj).chunk_pos == this.chunk_pos;
         }
 
         public int makeHash(long chunk_pos, int status) {
-        	int hash = HASH_INIT;
-        	hash ^= status;
-        	for (int b = 56; b >= 0; b -= 8) {
-        		hash ^= (chunk_pos >> b) & 0xff;
-        		hash *= HASH_PRIME;
-        	}
-        	return hash;
+            int hash = HASH_INIT;
+            hash ^= status;
+            for (int b = 56; b >= 0; b -= 8) {
+                hash ^= (chunk_pos >> b) & 0xff;
+                hash *= HASH_PRIME;
+            }
+            return hash;
         }
     }
 

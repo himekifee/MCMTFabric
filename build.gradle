@@ -1,5 +1,5 @@
 plugins {
-    id 'fabric-loom' version '0.10-SNAPSHOT'
+    id 'fabric-loom' version '0.12-SNAPSHOT'
     id 'maven-publish'
 }
 
@@ -34,7 +34,7 @@ dependencies {
     // PSA: Some older mods, compiled on Loom 0.2.1, might have outdated Maven POMs.
     // You may need to force-disable transitiveness on them.
 
-    modImplementation "com.terraformersmc:modmenu:3.0.1"
+    modImplementation "com.terraformersmc:modmenu:4.0.4"
     implementation group: 'com.google.code.findbugs', name: 'jsr305', version: '3.0.2'
 
     modApi("me.shedaniel.cloth:cloth-config-fabric:6.2.57") {

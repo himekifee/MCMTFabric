@@ -1,13 +1,13 @@
 package net.himeki.mcmtfabric.commands;
 
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
-import me.shedaniel.autoconfig.AutoConfig;
 import net.himeki.mcmtfabric.MCMT;
 import net.himeki.mcmtfabric.ParallelProcessor;
 import net.himeki.mcmtfabric.config.GeneralConfig;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.command.ServerCommandSource;
-import net.minecraft.text.LiteralText;
+import net.minecraft.text.MutableText;
+import net.minecraft.text.Text;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -24,37 +24,29 @@ public class StatsCommand {
             return 1;
         })).executes(cmdCtx -> {
             if (!threadStats) {
-                LiteralText message = new LiteralText("Stat calcs are disabled so stats are out of date");
+                MutableText message = Text.literal("Stat calcs are disabled so stats are out of date");
                 cmdCtx.getSource().sendFeedback(message, true);
             }
-            StringBuilder messageString = new StringBuilder(
-                    "Current max threads " + mean(maxThreads, liveValues) + " (");
+            StringBuilder messageString = new StringBuilder("Current max threads " + mean(maxThreads, liveValues) + " (");
             messageString.append("World:" + mean(maxWorlds, liveValues));
             messageString.append(" Entity:" + mean(maxEntities, liveValues));
             messageString.append(" TE:" + mean(maxTEs, liveValues));
             messageString.append(" Env:" + mean(maxEnvs, liveValues) + ")");
-            LiteralText message = new LiteralText(messageString.toString());
+            MutableText message = Text.literal(messageString.toString());
             cmdCtx.getSource().sendFeedback(message, true);
             return 1;
-        }).then(literal("toggle").requires(cmdSrc -> {
-            return cmdSrc.hasPermissionLevel(2);
-        }).executes(cmdCtx -> {
+        }).then(literal("toggle").requires(cmdSrc -> cmdSrc.hasPermissionLevel(2)).executes(cmdCtx -> {
             threadStats = !threadStats;
-            LiteralText message = new LiteralText("Stat calcs are " +
-                    (!threadStats ? "disabled" : "enabled") + "!");
+            MutableText message = Text.literal("Stat calcs are " + (!threadStats ? "disabled" : "enabled") + "!");
             cmdCtx.getSource().sendFeedback(message, true);
             return 1;
-        })).then(literal("startlog").requires(cmdSrc -> {
-            return cmdSrc.hasPermissionLevel(2);
-        }).executes(cmdCtx -> {
+        })).then(literal("startlog").requires(cmdSrc -> cmdSrc.hasPermissionLevel(2)).executes(cmdCtx -> {
             doLogging = true;
-            LiteralText message = new LiteralText("Logging started!");
+            MutableText message = Text.literal("Logging started!");
             cmdCtx.getSource().sendFeedback(message, true);
             return 1;
-        })).then(literal("stoplog").requires(cmdSrc -> {
-            return cmdSrc.hasPermissionLevel(2);
-        }).executes(cmdCtx -> {
-            LiteralText message = new LiteralText("Logging stopping...");
+        })).then(literal("stoplog").requires(cmdSrc -> cmdSrc.hasPermissionLevel(2)).executes(cmdCtx -> {
+            MutableText message = Text.literal("Logging stopping...");
             cmdCtx.getSource().sendFeedback(message, true);
             doLogging = false;
             return 1;
@@ -149,13 +141,11 @@ public class StatsCommand {
                             }
                             int total = 0;
                             int worlds = ParallelProcessor.currentWorlds.get();
-                            maxWorlds[currentPos] = Math.max(maxWorlds[currentPos],
-                                    worlds);
+                            maxWorlds[currentPos] = Math.max(maxWorlds[currentPos], worlds);
                             int tes = ParallelProcessor.currentTEs.get();
                             maxTEs[currentPos] = Math.max(maxTEs[currentPos], tes);
                             int entities = ParallelProcessor.currentEnts.get();
-                            maxEntities[currentPos] = Math.max(maxEntities[currentPos],
-                                    entities);
+                            maxEntities[currentPos] = Math.max(maxEntities[currentPos], entities);
                             int envs = ParallelProcessor.currentEnvs.get();
                             maxEnvs[currentPos] = Math.max(maxEnvs[currentPos], envs);
                             total = worlds + tes + entities + envs;

@@ -114,10 +114,10 @@ public class GeneralConfig implements ConfigData {
 
     @Override
     public void validatePostLoad() throws ValidationException {
-        if (paraMax >= -1 && paraMax <= Integer.MAX_VALUE)
+        if (paraMax >= -1)
             if (paraMaxMode == ParaMaxMode.Standard || paraMaxMode == ParaMaxMode.Override || paraMaxMode == ParaMaxMode.Reduction)
                 if (timeoutCount >= 500 && timeoutCount <= 500000)
-                    if (logCap >= 15000 && logCap <= Integer.MAX_VALUE)
+                    if (logCap >= 15000)
                         return;
         throw new ValidationException("Failed to validate MCMT config.");
     }

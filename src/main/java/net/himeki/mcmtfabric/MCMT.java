@@ -4,7 +4,7 @@ import me.shedaniel.autoconfig.AutoConfig;
 import me.shedaniel.autoconfig.ConfigHolder;
 import me.shedaniel.autoconfig.serializer.Toml4jConfigSerializer;
 import net.fabricmc.api.ModInitializer;
-import net.fabricmc.fabric.api.command.v1.CommandRegistrationCallback;
+import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.himeki.mcmtfabric.commands.ConfigCommand;
 import net.himeki.mcmtfabric.commands.StatsCommand;
@@ -47,7 +47,7 @@ public class MCMT implements ModInitializer {
 
         // Listener reg begin
         ServerLifecycleEvents.SERVER_STARTED.register(server -> StatsCommand.resetAll());
-        CommandRegistrationCallback.EVENT.register((dispatcher, dedicated) -> ConfigCommand.register(dispatcher));
+        CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> ConfigCommand.register(dispatcher));
 
     }
 }
