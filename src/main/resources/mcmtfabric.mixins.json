@@ -17,7 +17,6 @@
     "SerializingRegionBasedStorageMixin",
     "ServerChunkManagerMixin",
     "ServerWorldMixin",
-    "SharedConstantsMixin",
     "SimulationDistanceLevelPropagatorMixin",
     "SyncAllMixin",
     "ThreadedAnvilChunkStorageMixin",
