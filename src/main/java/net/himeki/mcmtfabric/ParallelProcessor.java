@@ -159,10 +159,10 @@ public class ParallelProcessor {
         }
     }
 
-    public static void preChunkTick(int size, ServerWorld world) {
+    public static void preChunkTick(ServerWorld world) {
         Phaser phaser; // Keep a party throughout 3 ticking phases
         if (!config.disabled && !config.disableEnvironment) {
-            phaser = new Phaser(size + 1);
+            phaser = new Phaser(2);
         } else {
             phaser = new Phaser(1);
         }
@@ -180,28 +180,29 @@ public class ParallelProcessor {
             currentTasks.add(taskName);
         }
         String finalTaskName = taskName;
+        sharedPhasers.get(world).register();
         ex.execute(() -> {
             try {
                 currentEnvs.incrementAndGet();
                 world.tickChunk(chunk, k);
             } finally {
+                if (config.opsTracing) currentTasks.remove(finalTaskName);
                 sharedPhasers.get(world).arriveAndDeregister();
                 currentEnvs.decrementAndGet();
-                if (config.opsTracing) currentTasks.remove(finalTaskName);
             }
         });
     }
 
-    public static void arriveChunkPhaser(ServerWorld world) {
-        if (!config.disabled && !config.disableEnvironment) sharedPhasers.get(world).arriveAndDeregister();
-    }
-
     public static void postChunkTick(ServerWorld world) {
-        if (!config.disabled && !config.disableEnvironment) sharedPhasers.get(world).arriveAndAwaitAdvance();
+        if (!config.disabled && !config.disableEnvironment) {
+            var phaser = sharedPhasers.get(world);
+            phaser.arriveAndDeregister();
+            phaser.arriveAndAwaitAdvance();
+        }
     }
 
-    public static void preEntityTick(int size, ServerWorld world) {
-        if (!config.disabled && !config.disableEntity) sharedPhasers.get(world).bulkRegister(size);
+    public static void preEntityTick(ServerWorld world) {
+        if (!config.disabled && !config.disableEntity) sharedPhasers.get(world).register();
     }
 
     public static void callEntityTick(Consumer<Entity> tickConsumer, Entity entityIn, ServerWorld serverworld) {
@@ -215,6 +216,7 @@ public class ParallelProcessor {
             currentTasks.add(taskName);
         }
         String finalTaskName = taskName;
+        sharedPhasers.get(serverworld).register();
         ex.execute(() -> {
             try {
                 final ISerDesFilter filter = SerDesRegistry.getFilter(SerDesHookTypes.EntityTick, entityIn.getClass());
@@ -225,23 +227,23 @@ public class ParallelProcessor {
                     tickConsumer.accept(entityIn);
                 }
             } finally {
+                if (config.opsTracing) currentTasks.remove(finalTaskName);
                 sharedPhasers.get(serverworld).arriveAndDeregister();
                 currentEnts.decrementAndGet();
-                if (config.opsTracing) currentTasks.remove(finalTaskName);
             }
         });
     }
 
-    public static void arriveEntityPhaser(ServerWorld world) {
-        if (!config.disabled && !config.disableEntity) sharedPhasers.get(world).arriveAndDeregister();
-    }
-
     public static void postEntityTick(ServerWorld world) {
-        if (!config.disabled && !config.disableEntity) sharedPhasers.get(world).arriveAndAwaitAdvance();
+        if (!config.disabled && !config.disableEntity) {
+            var phaser = sharedPhasers.get(world);
+            phaser.arriveAndDeregister();
+            phaser.arriveAndAwaitAdvance();
+        }
     }
 
-    public static void preBlockEntityTick(int size, ServerWorld world) {
-        if (!config.disabled && !config.disableTileEntity) sharedPhasers.get(world).bulkRegister(size);
+    public static void preBlockEntityTick(ServerWorld world) {
+        if (!config.disabled && !config.disableTileEntity) sharedPhasers.get(world).register();
     }
 
     public static void callBlockEntityTick(BlockEntityTickInvoker tte, World world) {
@@ -252,7 +254,6 @@ public class ParallelProcessor {
             }
             if (((WorldChunk.DirectBlockEntityTickInvoker<?>) ((WorldChunk.WrappedBlockEntityTickInvoker) tte).wrapped).blockEntity instanceof PistonBlockEntity) {
                 tte.tick();
-                sharedPhasers.get(world).arriveAndDeregister();
                 return;
             }
             String taskName = null;
@@ -261,6 +262,7 @@ public class ParallelProcessor {
                 currentTasks.add(taskName);
             }
             String finalTaskName = taskName;
+            sharedPhasers.get(world).register();
             ex.execute(() -> {
                 try {
                     final ISerDesFilter filter = SerDesRegistry.getFilter(SerDesHookTypes.TETick, ((WorldChunk.WrappedBlockEntityTickInvoker) tte).wrapped.getClass());
@@ -271,9 +273,9 @@ public class ParallelProcessor {
                     System.err.println("Exception ticking TE at " + tte.getPos());
                     e.printStackTrace();
                 } finally {
+                    if (config.opsTracing) currentTasks.remove(finalTaskName);
                     sharedPhasers.get(world).arriveAndDeregister();
                     currentTEs.decrementAndGet();
-                    if (config.opsTracing) currentTasks.remove(finalTaskName);
                 }
             });
         } else tte.tick();
@@ -297,12 +299,12 @@ public class ParallelProcessor {
         return isLocking;
     }
 
-    public static void arriveBlockEntityPhaser(ServerWorld world) {
-        if (!config.disabled && !config.disableTileEntity) sharedPhasers.get(world).arriveAndDeregister();
-    }
-
     public static void postBlockEntityTick(ServerWorld world) {
-        if (!config.disabled && !config.disableTileEntity) sharedPhasers.get(world).arriveAndAwaitAdvance();
+        if (!config.disabled && !config.disableTileEntity) {
+            var phaser = sharedPhasers.get(world);
+            phaser.arriveAndDeregister();
+            phaser.arriveAndAwaitAdvance();
+        }
     }
 
     public static boolean shouldThreadChunks() {
