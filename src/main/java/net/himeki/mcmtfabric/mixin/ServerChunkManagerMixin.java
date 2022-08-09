@@ -40,7 +40,7 @@ public abstract class ServerChunkManagerMixin extends ChunkManager {
 
     @Redirect(method = "tickChunks", at = @At(value = "INVOKE", target = "Ljava/util/Collections;shuffle(Ljava/util/List;)V"))
     private void preChunkTick(List<?> list) {
-        ParallelProcessor.preChunkTick(list.size(), this.world);
+        ParallelProcessor.preChunkTick(this.world);
         Collections.shuffle(list);
     }
 
@@ -49,20 +49,6 @@ public abstract class ServerChunkManagerMixin extends ChunkManager {
         ParallelProcessor.callTickChunks(serverWorld, chunk, randomTickSpeed);
     }
 
-    @ModifyExpressionValue(
-            method = "tickChunks",
-            at = {
-                    @At(value = "INVOKE", target = "Lnet/minecraft/server/world/ServerWorld;shouldTick(Lnet/minecraft/util/math/ChunkPos;)Z"),
-                    @At(value = "INVOKE", target = "Lnet/minecraft/server/world/ThreadedAnvilChunkStorage;shouldTick(Lnet/minecraft/util/math/ChunkPos;)Z"),
-                    @At(value = "INVOKE", target = "Lnet/minecraft/server/world/ServerWorld;shouldTickBlocksInChunk(J)Z")
-            }
-    )
-    private boolean continueToArrivePhaser(boolean shouldTick) {
-        if (!shouldTick) {
-            ParallelProcessor.arriveChunkPhaser(world);
-        }
-        return shouldTick;
-    }
 
     @Redirect(method = {"getChunk(IILnet/minecraft/world/chunk/ChunkStatus;Z)Lnet/minecraft/world/chunk/Chunk;", "getWorldChunk"}, at = @At(value = "FIELD", target = "Lnet/minecraft/server/world/ServerChunkManager;serverThread:Ljava/lang/Thread;", opcode = Opcodes.GETFIELD))
     private Thread overwriteServerThread(ServerChunkManager mgr) {

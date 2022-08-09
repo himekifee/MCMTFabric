@@ -80,14 +80,7 @@ public abstract class ServerWorldMixin extends World implements StructureWorldAc
 
     @Inject(method = "tick", at = @At(value = "INVOKE", target = "Lnet/minecraft/util/profiler/Profiler;push(Ljava/lang/String;)V", ordinal = 2))
     private void preEntityTick(BooleanSupplier shouldKeepTicking, CallbackInfo ci) {
-        AtomicInteger counter = new AtomicInteger(0);
-        this.entityList.forEach(e -> counter.incrementAndGet());
-        ParallelProcessor.preEntityTick(counter.intValue(), thisWorld);
-    }
-
-    @Inject(method = "method_31420", slice = @Slice(to = @At(value = "TAIL", shift = At.Shift.BEFORE)), at = @At("RETURN"))
-    private void arriveEntityPhaser(Profiler profiler, Entity entity, CallbackInfo ci) {
-        ParallelProcessor.arriveEntityPhaser(thisWorld);
+        ParallelProcessor.preEntityTick(thisWorld);
     }
 
     @Redirect(method = "method_31420", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/world/ServerWorld;tickEntity(Ljava/util/function/Consumer;Lnet/minecraft/entity/Entity;)V"))

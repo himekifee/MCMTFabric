@@ -32,30 +32,8 @@ public abstract class WorldMixin implements WorldAccess, AutoCloseable {
         if ((Object) this instanceof ServerWorld) {
             ServerWorld thisWorld = (ServerWorld) (Object) this;
             ParallelProcessor.postEntityTick(thisWorld);
-            ParallelProcessor.preBlockEntityTick(this.blockEntityTickers.size(), thisWorld);
+            ParallelProcessor.preBlockEntityTick(thisWorld);
         }
-    }
-
-    @Redirect(method = "tickBlockEntities", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/chunk/BlockEntityTickInvoker;isRemoved()Z"))
-    private boolean continueToArrivePhaser0(BlockEntityTickInvoker instance) {
-        boolean bl = instance.isRemoved();
-        if ((Object) this instanceof ServerWorld) {
-            if (bl) {
-                ParallelProcessor.arriveBlockEntityPhaser((ServerWorld) (Object) this);
-            }
-        }
-        return bl;
-    }
-
-    @Redirect(method = "tickBlockEntities", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/World;shouldTickBlocksInChunk(J)Z"))
-    private boolean continueToArrivePhaser1(World instance, long chunkPos) {
-        boolean bl = instance.shouldTickBlocksInChunk(chunkPos);
-        if ((Object) this instanceof ServerWorld) {
-            if (!bl) {
-                ParallelProcessor.arriveBlockEntityPhaser((ServerWorld) (Object) this);
-            }
-        }
-        return bl;
     }
 
     @Inject(method = "tickBlockEntities", at = @At(value = "INVOKE", target = "Lnet/minecraft/util/profiler/Profiler;pop()V"))
