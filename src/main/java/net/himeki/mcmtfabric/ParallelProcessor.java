@@ -8,6 +8,7 @@ import net.himeki.mcmtfabric.serdes.filter.ISerDesFilter;
 import net.himeki.mcmtfabric.serdes.pools.PostExecutePool;
 import net.minecraft.block.entity.PistonBlockEntity;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.world.World;
@@ -30,22 +31,31 @@ public class ParallelProcessor {
     static Phaser worldPhaser;
 
     static ConcurrentHashMap<ServerWorld, Phaser> sharedPhasers = new ConcurrentHashMap<>();
-    static ExecutorService ex;
+    static ExecutorService worldPool;
+    static ExecutorService tickPool;
     static MinecraftServer mcs;
     static AtomicBoolean isTicking = new AtomicBoolean();
-    static AtomicInteger threadID = new AtomicInteger();
 
     public static void setupThreadPool(int parallelism) {
-        threadID = new AtomicInteger();
+        AtomicInteger worldPoolThreadID = new AtomicInteger();
+        AtomicInteger tickPoolThreadID = new AtomicInteger();
         final ClassLoader cl = MCMT.class.getClassLoader();
-        ForkJoinPool.ForkJoinWorkerThreadFactory fjpf = p -> {
+        ForkJoinPool.ForkJoinWorkerThreadFactory worldThreadFactory = p -> {
             ForkJoinWorkerThread fjwt = ForkJoinPool.defaultForkJoinWorkerThreadFactory.newThread(p);
-            fjwt.setName("MCMT-Pool-Thread-" + threadID.getAndIncrement());
-            regThread("MCMT", fjwt);
+            fjwt.setName("MCMT-World-Pool-Thread-" + worldPoolThreadID.getAndIncrement());
+            regThread("MCMT-World", fjwt);
             fjwt.setContextClassLoader(cl);
             return fjwt;
         };
-        ex = new ForkJoinPool(parallelism, fjpf, null, true);
+        ForkJoinPool.ForkJoinWorkerThreadFactory tickThreadFactory = p -> {
+            ForkJoinWorkerThread fjwt = ForkJoinPool.defaultForkJoinWorkerThreadFactory.newThread(p);
+            fjwt.setName("MCMT-Tick-Pool-Thread-" + tickPoolThreadID.getAndIncrement());
+            regThread("MCMT-Tick", fjwt);
+            fjwt.setContextClassLoader(cl);
+            return fjwt;
+        };
+        worldPool = new ForkJoinPool(Math.min(3, Math.max(parallelism / 2, 1)), worldThreadFactory, null, true);
+        tickPool = new ForkJoinPool(parallelism, tickThreadFactory, null, true);
     }
 
     /**
@@ -76,7 +86,7 @@ public class ParallelProcessor {
     }
 
     public static boolean serverExecutionThreadPatch(MinecraftServer ms) {
-        return isThreadPooled("MCMT", Thread.currentThread());
+        return isThreadPooled("MCMT-World", Thread.currentThread()) || isThreadPooled("MCMT-Tick", Thread.currentThread());
     }
 
     static long tickStart = 0;
@@ -118,7 +128,7 @@ public class ParallelProcessor {
                 currentTasks.add(taskName);
             }
             String finalTaskName = taskName;
-            ex.execute(() -> {
+            worldPool.execute(() -> {
                 try {
                     currentWorlds.incrementAndGet();
                     serverworld.tick(hasTimeLeft);
@@ -181,7 +191,7 @@ public class ParallelProcessor {
         }
         String finalTaskName = taskName;
         sharedPhasers.get(world).register();
-        ex.execute(() -> {
+        tickPool.execute(() -> {
             try {
                 currentEnvs.incrementAndGet();
                 world.tickChunk(chunk, k);
@@ -210,6 +220,10 @@ public class ParallelProcessor {
             tickConsumer.accept(entityIn);
             return;
         }
+        if (entityIn instanceof PlayerEntity) {
+            tickConsumer.accept(entityIn);
+            return;
+        }
         String taskName = null;
         if (config.opsTracing) {
             taskName = "EntityTick: " + /*entityIn.toString() + KG: Wayyy too slow. Maybe for debug but needs to be done via flag in that circumstance */ "@" + entityIn.hashCode();
@@ -217,7 +231,7 @@ public class ParallelProcessor {
         }
         String finalTaskName = taskName;
         sharedPhasers.get(serverworld).register();
-        ex.execute(() -> {
+        tickPool.execute(() -> {
             try {
                 final ISerDesFilter filter = SerDesRegistry.getFilter(SerDesHookTypes.EntityTick, entityIn.getClass());
                 currentEnts.incrementAndGet();
@@ -263,7 +277,7 @@ public class ParallelProcessor {
             }
             String finalTaskName = taskName;
             sharedPhasers.get(world).register();
-            ex.execute(() -> {
+            tickPool.execute(() -> {
                 try {
                     final ISerDesFilter filter = SerDesRegistry.getFilter(SerDesHookTypes.TETick, ((WorldChunk.WrappedBlockEntityTickInvoker) tte).wrapped.getClass());
                     currentTEs.incrementAndGet();
