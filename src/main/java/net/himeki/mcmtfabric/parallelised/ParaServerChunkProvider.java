@@ -113,7 +113,7 @@ public class ParaServerChunkProvider extends ServerChunkManager {
 
         Chunk cl;
         if (ParallelProcessor.shouldThreadChunks()) {
-            // Multithread but still limit to 1 load op per chunk
+            // Multithreaded but still limit to 1 load op per chunk
             long[] locks = loadingChunkLock.lock(i, 0);
             try {
                 if ((c = lookupChunk(i, requiredStatus, false)) != null) {

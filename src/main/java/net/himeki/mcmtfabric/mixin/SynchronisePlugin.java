@@ -33,6 +33,7 @@ public class SynchronisePlugin implements IMixinConfigPlugin {
 //        mixin2MethodsMap.put("net.himeki.mcmtfabric.mixin.LevelPropagatorMixin", mappingResolver.mapMethodName("intermediary", "net.minecraft.class_3554", "method_15492", "(I)I"));
 //        mixin2MethodsMap.put("net.himeki.mcmtfabric.mixin.LevelPropagatorMixin", mappingResolver.mapMethodName("intermediary", "net.minecraft.class_3554", "method_15478", "(JJIZ)V"));
         mixin2MethodsMap.put("net.himeki.mcmtfabric.mixin.ChainRestrictedNeighborUpdaterMixin", mappingResolver.mapMethodName("intermediary", "net.minecraft.class_7159", "method_41706", "(Lnet/minecraft/class_2338;Lnet/minecraft/class_7159$class_7162;)V"));
+        mixin2MethodsMap.put("net.himeki.mcmtfabric.mixin.ServerChunkManagerMixin", mappingResolver.mapMethodName("intermediary", "net.minecraft.class_3215", "method_21738", "(JLnet/minecraft/class_2791;Lnet/minecraft/class_2806;)V"));
 
 
 
