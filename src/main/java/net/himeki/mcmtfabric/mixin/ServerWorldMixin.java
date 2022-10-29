@@ -12,9 +12,9 @@ import net.minecraft.server.world.BlockEvent;
 import net.minecraft.server.world.ServerChunkManager;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.structure.StructureTemplateManager;
-import net.minecraft.util.profiler.Profiler;
 import net.minecraft.world.*;
 import net.minecraft.world.chunk.ChunkStatusChangeListener;
+import net.minecraft.world.event.GameEvent;
 import net.minecraft.world.gen.chunk.ChunkGenerator;
 import net.minecraft.world.level.storage.LevelStorage;
 import org.objectweb.asm.Opcodes;
@@ -25,14 +25,14 @@ import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
-import org.spongepowered.asm.mixin.injection.Slice;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executor;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -47,6 +47,11 @@ public abstract class ServerWorldMixin implements StructureWorldAccess {
     @Final
     @Mutable
     private Set<MobEntity> loadedMobs = ConcurrentCollections.newHashSet();
+
+    @Shadow
+    @Final
+    @Mutable
+    private List<GameEvent.Message> queuedEvents = new CopyOnWriteArrayList<>();
 
     @Shadow
     @Final
@@ -106,5 +111,10 @@ public abstract class ServerWorldMixin implements StructureWorldAccess {
     @Redirect(method = "updateListeners", at = @At(value = "FIELD", target = "Lnet/minecraft/server/world/ServerWorld;duringListenerUpdate:Z", opcode = Opcodes.PUTFIELD))
     private void skipSendBlockUpdatedCheck(ServerWorld instance, boolean value) {
 
+    }
+
+    @Inject(method = "processEventQueue", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/world/ServerWorld;processEvents(Ljava/util/List;)V"))
+    private void overwriteEventQueue(CallbackInfo ci) {
+        this.queuedEvents = new CopyOnWriteArrayList<>();
     }
 }
