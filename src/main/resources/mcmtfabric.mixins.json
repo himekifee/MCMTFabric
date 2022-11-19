@@ -12,6 +12,7 @@
     "EntityIndexMixin",
     "EntityListMixin",
     "FastUtilsMixin",
+    "ItemEntityMixin",
     "LevelPropagatorMixin",
     "LockHelperMixin",
     "MinecraftServerMixin",
