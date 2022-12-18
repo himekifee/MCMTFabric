@@ -7,7 +7,7 @@ import net.minecraft.server.ServerTask;
 import net.minecraft.server.command.CommandOutput;
 import net.minecraft.server.world.ServerChunkManager;
 import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.registry.RegistryKey;
+import net.minecraft.registry.RegistryKey;
 import net.minecraft.util.thread.ReentrantThreadExecutor;
 import net.minecraft.world.World;
 import org.spongepowered.asm.mixin.Final;

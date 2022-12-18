@@ -1,21 +1,21 @@
 package net.himeki.mcmtfabric.commands;
 
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
-import com.mojang.datafixers.util.Pair;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.command.argument.PosArgument;
 import net.minecraft.command.argument.Vec3ArgumentType;
 import net.minecraft.nbt.NbtCompound;
+import net.minecraft.registry.entry.RegistryEntry;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.registry.Registry;
-import net.minecraft.util.registry.RegistryEntry;
-import net.minecraft.util.registry.RegistryEntryList;
+import net.minecraft.registry.Registry;
+import net.minecraft.registry.RegistryKey;
+import net.minecraft.registry.RegistryKeys;
 import net.minecraft.world.chunk.BlockEntityTickInvoker;
 import net.minecraft.world.gen.structure.Structure;
 
@@ -112,8 +112,8 @@ public class DebugCommand {
                     BlockPos srcPos = p.getBlockPos();
                     UUID id = p.getUuid();
                     int index = structureIdx.computeIfAbsent(id.toString(), (s) -> new AtomicInteger()).getAndIncrement();
-                    Registry<Structure> registry = cmdCtx.getSource().getWorld().getRegistryManager().get(Registry.STRUCTURE_KEY);
-                    List<RegistryEntry.Reference<Structure>> targets = registry.streamEntries().toList();
+                    Registry<Structure> registry = cmdCtx.getSource().getWorld().getRegistryManager().get(RegistryKeys.STRUCTURE);
+                    var targets = registry.streamEntries().toList();
                     RegistryEntry.Reference<Structure> target;
                     if (index >= targets.size()) {
                         target = targets.get(0);
@@ -121,15 +121,15 @@ public class DebugCommand {
                     } else {
                         target = targets.get(index);
                     }
-                    Pair<BlockPos, RegistryEntry<Structure>> dst = cmdCtx.getSource().getWorld().getChunkManager().getChunkGenerator().locateStructure(cmdCtx.getSource().getWorld(), RegistryEntryList.of(target), srcPos, 100, false);
-                    if (dst == null) {
-                        MutableText message = Text.literal("Failed locating " + target.registryKey().getValue().toString() + " from " + srcPos);
-                        cmdCtx.getSource().sendFeedback(message, true);
-                        return 1;
-                    }
-                    MutableText message = Text.literal("Found target; loading now");
-                    cmdCtx.getSource().sendFeedback(message, true);
-                    p.teleport(dst.getFirst().getX(), srcPos.getY(), dst.getFirst().getZ());
+//                    Pair<BlockPos, RegistryKey<Structure>> dst = cmdCtx.getSource().getWorld().getChunkManager().getChunkGenerator().locateStructure(cmdCtx.getSource().getWorld(), RegistryKey.of(target), srcPos, 100, false);
+//                    if (dst == null) {
+//                        MutableText message = Text.literal("Failed locating " + target.registryKey().getValue().toString() + " from " + srcPos);
+//                        cmdCtx.getSource().sendFeedback(message, true);
+//                        return 1;
+//                    }
+//                    MutableText message = Text.literal("Found target; loading now");
+//                    cmdCtx.getSource().sendFeedback(message, true);
+//                    p.teleport(dst.getFirst().getX(), srcPos.getY(), dst.getFirst().getZ());
                     //LocateCommand.showLocateResult(cmdCtx.getSource(), ResourceOrTagLocationArgument.getStructureFeature(p_207508_, "structure"), srcpos, dst, "commands.locate.success");
                     return 1;
                 })));

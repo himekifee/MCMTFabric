@@ -46,12 +46,7 @@ public abstract class ServerWorldMixin implements StructureWorldAccess {
     @Shadow
     @Final
     @Mutable
-    private Set<MobEntity> loadedMobs = ConcurrentCollections.newHashSet();
-
-    @Shadow
-    @Final
-    @Mutable
-    private List<GameEvent.Message> queuedEvents = new CopyOnWriteArrayList<>();
+    Set<MobEntity> loadedMobs = ConcurrentCollections.newHashSet();
 
     @Shadow
     @Final
@@ -60,7 +55,7 @@ public abstract class ServerWorldMixin implements StructureWorldAccess {
 
     @Shadow
     @Final
-    private EntityList entityList;
+    EntityList entityList;
     ServerWorld thisWorld = (ServerWorld) (Object) this;
 
     @Redirect(method = "<init>", at = @At(value = "NEW", target = "net/minecraft/server/world/ServerChunkManager"))
@@ -111,10 +106,5 @@ public abstract class ServerWorldMixin implements StructureWorldAccess {
     @Redirect(method = "updateListeners", at = @At(value = "FIELD", target = "Lnet/minecraft/server/world/ServerWorld;duringListenerUpdate:Z", opcode = Opcodes.PUTFIELD))
     private void skipSendBlockUpdatedCheck(ServerWorld instance, boolean value) {
 
-    }
-
-    @Inject(method = "processEventQueue", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/world/ServerWorld;processEvents(Ljava/util/List;)V"))
-    private void overwriteEventQueue(CallbackInfo ci) {
-        this.queuedEvents = new CopyOnWriteArrayList<>();
     }
 }
