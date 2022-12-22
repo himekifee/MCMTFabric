@@ -15,13 +15,17 @@ public class Long2ByteConcurrentHashMap implements Long2ByteMap {
     byte nullKey = 0;
 
     public Long2ByteConcurrentHashMap() {
-        backing = new ConcurrentHashMap<Long, Byte>();
+        backing = new ConcurrentHashMap<>();
+    }
+
+    public Long2ByteConcurrentHashMap(int initialCapacity, float loadFactor) {
+        backing = new ConcurrentHashMap<>(initialCapacity, loadFactor);
     }
 
     @Override
     public byte get(long key) {
         Byte out = backing.get(key);
-        return (out == null && !backing.containsKey(key)) ? defaultReturn : out;
+        return out == null ? defaultReturn : out;
     }
 
     @Override
@@ -76,19 +80,19 @@ public class Long2ByteConcurrentHashMap implements Long2ByteMap {
 
     @Override
     public byte put(long key, byte value) {
-        return put((Long)key, (Byte)value);
+        return put((Long) key, (Byte) value);
     }
 
     @Override
     public Byte put(Long key, Byte value) {
         Byte out = backing.put(key, value);
-        return (out == null && !backing.containsKey(key)) ? defaultReturn : backing.put(key, value);
+        return out == null ? Byte.valueOf(defaultReturn) : out;
     }
 
     @Override
     public byte remove(long key) {
         Byte out = backing.remove(key);
-        return (out == null && !backing.containsKey(key)) ? defaultReturn : out;
+        return out == null ? defaultReturn : out;
     }
 
 
