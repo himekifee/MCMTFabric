@@ -81,12 +81,11 @@ public class SynchronisePlugin implements IMixinConfigPlugin {
                     }
             }
         else if (syncAllSet.contains(mixinClassName)) {
-            int posFilter = Opcodes.ACC_PUBLIC;
+//            int posFilter = Opcodes.ACC_PUBLIC;
             int negFilter = Opcodes.ACC_STATIC | Opcodes.ACC_SYNTHETIC | Opcodes.ACC_NATIVE | Opcodes.ACC_ABSTRACT | Opcodes.ACC_BRIDGE;
 
             for (MethodNode method : targetClass.methods) {
-                if ((method.access & posFilter) == posFilter
-                        && (method.access & negFilter) == 0
+                if ((method.access & negFilter) == 0
                         && !method.name.equals("<init>")) {
                     method.access |= Opcodes.ACC_SYNCHRONIZED;
                     syncLogger.info("Setting synchronize bit for " + method.name + " in " + targetClassName + ".");
