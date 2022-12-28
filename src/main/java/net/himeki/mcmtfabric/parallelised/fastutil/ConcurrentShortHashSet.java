@@ -10,7 +10,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class ConcurrentShortHashSet implements ShortSet {
 
-    ConcurrentHashMap.KeySetView<Short, Boolean> backing = new ConcurrentHashMap<Short, Integer>().newKeySet();
+    ConcurrentHashMap.KeySetView<Short, Boolean> backing = ConcurrentHashMap.newKeySet();
 
     @Override
     public int size() {

@@ -8,7 +8,6 @@ import org.apache.logging.log4j.Logger;
 
 public class SyncFuTransformer implements PreLaunchEntrypoint {
     private static final Logger syncFuTransformerLogger = LogManager.getLogger();
-    private boolean isActive = true;
 
     @Override
     public void onPreLaunch() {
