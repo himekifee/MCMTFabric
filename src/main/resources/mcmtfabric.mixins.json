@@ -16,6 +16,7 @@
     "LevelPropagatorMixin",
     "MinecraftServerMixin",
     "PathNodeNavigatorMixin",
+    "PendingUpdateQueueMixin",
     "SectionedEntityCacheMixin",
     "SerializingRegionBasedStorageMixin",
     "ServerChunkManagerMixin",
