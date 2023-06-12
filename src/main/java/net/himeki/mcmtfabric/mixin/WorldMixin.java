@@ -1,13 +1,10 @@
 package net.himeki.mcmtfabric.mixin;
 
-import net.himeki.mcmtfabric.MCMT;
 import net.himeki.mcmtfabric.ParallelProcessor;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.world.World;
 import net.minecraft.world.WorldAccess;
 import net.minecraft.world.chunk.BlockEntityTickInvoker;
-import net.minecraft.world.chunk.Chunk;
-import net.minecraft.world.chunk.ReadOnlyChunk;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Mutable;
@@ -51,23 +48,23 @@ public abstract class WorldMixin implements WorldAccess, AutoCloseable {
         return this.thread;
     }
 
-    @Redirect(method = "getChunk(II)Lnet/minecraft/world/chunk/WorldChunk;", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/World;getChunk(IILnet/minecraft/world/chunk/ChunkStatus;)Lnet/minecraft/world/chunk/Chunk;"))
-    private Chunk getChunk(World world, int x, int z, net.minecraft.world.chunk.ChunkStatus leastStatus, int i, int j) {
-        Chunk chunk;
-        long startTime, counter = -1;
-        startTime = System.currentTimeMillis();
-
-        do {
-            chunk = world.getChunk(x, z, leastStatus);
-            counter++;
-            if (counter>0)
-                System.out.println("getChunk() retry: " + counter);
-        } while (chunk instanceof ReadOnlyChunk);
-
-        if (counter > 0) {
-            MCMT.LOGGER.warn("Chunk at " + x + ", " + z + " was ReadOnlyChunk for " + counter + " times before completely loaded. Took " + (System.currentTimeMillis() - startTime) + "ms");
-        }
-        return chunk;
-    }
+//    @Redirect(method = "getChunk(II)Lnet/minecraft/world/chunk/WorldChunk;", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/World;getChunk(IILnet/minecraft/world/chunk/ChunkStatus;)Lnet/minecraft/world/chunk/Chunk;"))
+//    private Chunk getChunk(World world, int x, int z, net.minecraft.world.chunk.ChunkStatus leastStatus, int i, int j) {
+//        Chunk chunk;
+//        long startTime, counter = -1;
+//        startTime = System.currentTimeMillis();
+//
+//        do {
+//            chunk = world.getChunk(x, z, leastStatus);
+//            counter++;
+//            if (counter>0)
+//                System.out.println("getChunk() retry: " + counter);
+//        } while (chunk instanceof ReadOnlyChunk);
+//
+//        if (counter > 0) {
+//            MCMT.LOGGER.warn("Chunk at " + x + ", " + z + " was ReadOnlyChunk for " + counter + " times before completely loaded. Took " + (System.currentTimeMillis() - startTime) + "ms");
+//        }
+//        return chunk;
+//    }
 
 }

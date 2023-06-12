@@ -37,37 +37,37 @@ public class ConfigCommand {
                             config.disabled = !config.disabled;
                             MutableText message = Text.literal(
                                     "MCMT is now " + (config.disabled ? "disabled" : "enabled"));
-                            cmdCtx.getSource().sendFeedback(message, true);
+                            cmdCtx.getSource().sendFeedback(() -> message, true);
                             return 1;
                         }).then(literal("te").executes(cmdCtx -> {
                             config.disableTileEntity = !config.disableTileEntity;
                             MutableText message = Text.literal("MCMT's tile entity threading is now "
                                     + (config.disableTileEntity ? "disabled" : "enabled"));
-                            cmdCtx.getSource().sendFeedback(message, true);
+                            cmdCtx.getSource().sendFeedback(() -> message, true);
                             return 1;
                         })).then(literal("entity").executes(cmdCtx -> {
                             config.disableEntity = !config.disableEntity;
                             MutableText message = Text.literal(
                                     "MCMT's entity threading is now " + (config.disableEntity ? "disabled" : "enabled"));
-                            cmdCtx.getSource().sendFeedback(message, true);
+                            cmdCtx.getSource().sendFeedback(() -> message, true);
                             return 1;
                         })).then(literal("environment").executes(cmdCtx -> {
                             config.disableEnvironment = !config.disableEnvironment;
                             MutableText message = Text.literal("MCMT's environment threading is now "
                                     + (config.disableEnvironment ? "disabled" : "enabled"));
-                            cmdCtx.getSource().sendFeedback(message, true);
+                            cmdCtx.getSource().sendFeedback(() -> message, true);
                             return 1;
                         })).then(literal("world").executes(cmdCtx -> {
                             config.disableWorld = !config.disableWorld;
                             MutableText message = Text.literal(
                                     "MCMT's world threading is now " + (config.disableWorld ? "disabled" : "enabled"));
-                            cmdCtx.getSource().sendFeedback(message, true);
+                            cmdCtx.getSource().sendFeedback(() -> message, true);
                             return 1;
                         })).then(literal("ops").executes(cmdCtx -> {
                             config.opsTracing = !config.opsTracing;
                             MutableText message = Text.literal(
                                     "MCMT's ops tracing is now " + (!config.opsTracing ? "disabled" : "enabled"));
-                            cmdCtx.getSource().sendFeedback(message, true);
+                            cmdCtx.getSource().sendFeedback(() -> message, true);
                             return 1;
                         }))
                 )
@@ -83,17 +83,16 @@ public class ConfigCommand {
                         messageString.append(" SCP:" + (config.disableChunkProvider ? "disabled" : "enabled"));
                     }
                     MutableText message = Text.literal(messageString.toString());
-                    cmdCtx.getSource().sendFeedback(message, true);
+                    cmdCtx.getSource().sendFeedback(() -> message, true);
                     return 1;
                 }))
                 .then(literal("save").requires(cmdSrc -> {
                     return cmdSrc.hasPermissionLevel(2);
                 }).executes(cmdCtx -> {
                     MutableText message = Text.literal("Saving MCMT config to disk...");
-                    cmdCtx.getSource().sendFeedback(message, true);
+                    cmdCtx.getSource().sendFeedback(() -> message, true);
                     AutoConfig.getConfigHolder(GeneralConfig.class).save();
-                    message = Text.literal("Done!");
-                    cmdCtx.getSource().sendFeedback(message, true);
+                    cmdCtx.getSource().sendFeedback(() -> Text.literal("Done!"), true);
                     return 1;
                 }))
                 .then(literal("temanage").requires(cmdSrc -> {
@@ -101,7 +100,7 @@ public class ConfigCommand {
                         }).then(literal("list")
                                 .executes(cmdCtx -> {
                                     MutableText message = Text.literal("NYI");
-                                    cmdCtx.getSource().sendFeedback(message, true);
+                                    cmdCtx.getSource().sendFeedback(() -> message, true);
                                     return 1;
                                 })).then(literal("target")
                                 .requires(cmdSrc -> {
@@ -120,7 +119,7 @@ public class ConfigCommand {
                                         if (te != null && isTickableBe(te)) {
                                             if (config.teWhiteListString.contains(te.getClass().getName())) {
                                                 message = Text.literal("Class " + te.getClass().getName() + " already exists in TE Whitelist");
-                                                cmdCtx.getSource().sendFeedback(message, true);
+                                                cmdCtx.getSource().sendFeedback(() -> message, true);
                                                 return 0;
                                             }
                                             BlockEntityLists.teWhiteList.add(te.getClass());
@@ -128,7 +127,7 @@ public class ConfigCommand {
                                             BlockEntityLists.teBlackList.remove(te.getClass());
                                             config.teBlackListString.remove(te.getClass().getName());
                                             message = Text.literal("Added " + te.getClass().getName() + " to TE Whitelist");
-                                            cmdCtx.getSource().sendFeedback(message, true);
+                                            cmdCtx.getSource().sendFeedback(() -> message, true);
                                             return 1;
                                         }
                                         message = Text.literal("That block doesn't contain a tickable TE!");
@@ -147,7 +146,7 @@ public class ConfigCommand {
                                         if (te != null && isTickableBe(te)) {
                                             if (config.teBlackListString.contains(te.getClass().getName())) {
                                                 message = Text.literal("Class " + te.getClass().getName() + " already exists in TE Blacklist");
-                                                cmdCtx.getSource().sendFeedback(message, true);
+                                                cmdCtx.getSource().sendFeedback(() -> message, true);
                                                 return 0;
                                             }
                                             BlockEntityLists.teBlackList.add(te.getClass());
@@ -155,7 +154,7 @@ public class ConfigCommand {
                                             BlockEntityLists.teWhiteList.remove(te.getClass());
                                             config.teWhiteListString.remove(te.getClass().getName());
                                             message = Text.literal("Added " + te.getClass().getName() + " to TE Blacklist");
-                                            cmdCtx.getSource().sendFeedback(message, true);
+                                            cmdCtx.getSource().sendFeedback(() -> message, true);
                                             return 1;
                                         }
                                         message = Text.literal("That block doesn't contain a tickable TE!");
@@ -177,7 +176,7 @@ public class ConfigCommand {
                                             BlockEntityLists.teWhiteList.remove(te.getClass());
                                             config.teWhiteListString.remove(te.getClass().getName());
                                             message = Text.literal("Removed " + te.getClass().getName() + " from TE classlists");
-                                            cmdCtx.getSource().sendFeedback(message, true);
+                                            cmdCtx.getSource().sendFeedback(() -> message, true);
                                             return 1;
                                         }
                                         message = Text.literal("That block doesn't contain a tickable TE!");
@@ -196,7 +195,7 @@ public class ConfigCommand {
                                         if (isTickableBe(te)) {
                                             boolean willSerial = ParallelProcessor.filterTE((BlockEntityTickInvoker) te);
                                             message = Text.literal("That TE " + (!willSerial ? "will" : "will not") + " tick fully parallelised");
-                                            cmdCtx.getSource().sendFeedback(message, true);
+                                            cmdCtx.getSource().sendFeedback(() -> message, true);
                                             return 1;
                                         }
                                         message = Text.literal("That block doesn't contain a tickable TE!");

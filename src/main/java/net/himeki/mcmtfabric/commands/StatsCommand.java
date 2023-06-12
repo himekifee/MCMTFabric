@@ -25,7 +25,7 @@ public class StatsCommand {
         })).executes(cmdCtx -> {
             if (!threadStats) {
                 MutableText message = Text.literal("Stat calcs are disabled so stats are out of date");
-                cmdCtx.getSource().sendFeedback(message, true);
+                cmdCtx.getSource().sendFeedback(() -> message, true);
             }
             StringBuilder messageString = new StringBuilder("Current max threads " + mean(maxThreads, liveValues) + " (");
             messageString.append("World:" + mean(maxWorlds, liveValues));
@@ -33,21 +33,21 @@ public class StatsCommand {
             messageString.append(" TE:" + mean(maxTEs, liveValues));
             messageString.append(" Env:" + mean(maxEnvs, liveValues) + ")");
             MutableText message = Text.literal(messageString.toString());
-            cmdCtx.getSource().sendFeedback(message, true);
+            cmdCtx.getSource().sendFeedback(() -> message, true);
             return 1;
         }).then(literal("toggle").requires(cmdSrc -> cmdSrc.hasPermissionLevel(2)).executes(cmdCtx -> {
             threadStats = !threadStats;
             MutableText message = Text.literal("Stat calcs are " + (!threadStats ? "disabled" : "enabled") + "!");
-            cmdCtx.getSource().sendFeedback(message, true);
+            cmdCtx.getSource().sendFeedback(() -> message, true);
             return 1;
         })).then(literal("startlog").requires(cmdSrc -> cmdSrc.hasPermissionLevel(2)).executes(cmdCtx -> {
             doLogging = true;
             MutableText message = Text.literal("Logging started!");
-            cmdCtx.getSource().sendFeedback(message, true);
+            cmdCtx.getSource().sendFeedback(() -> message, true);
             return 1;
         })).then(literal("stoplog").requires(cmdSrc -> cmdSrc.hasPermissionLevel(2)).executes(cmdCtx -> {
             MutableText message = Text.literal("Logging stopping...");
-            cmdCtx.getSource().sendFeedback(message, true);
+            cmdCtx.getSource().sendFeedback(() -> message, true);
             doLogging = false;
             return 1;
         })));

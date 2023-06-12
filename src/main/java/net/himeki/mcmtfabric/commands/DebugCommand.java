@@ -43,7 +43,7 @@ public class DebugCommand {
             ServerWorld sw = cmdCtx.getSource().getWorld();
             BlockState bs = sw.getBlockState(bp);
             MutableText message = Text.literal("Block at " + bp + " is " + bs.getBlock().getName());
-            cmdCtx.getSource().sendFeedback(message, true);
+            cmdCtx.getSource().sendFeedback(() -> message, true);
             System.out.println(message);
             return 1;
         }))).then(literal("nbtdump").then(argument("location", Vec3ArgumentType.vec3()).executes(cmdCtx -> {
@@ -54,14 +54,14 @@ public class DebugCommand {
             BlockEntity te = sw.getBlockEntity(bp);
             if (te == null) {
                 MutableText message = Text.literal("Block at " + bp + " is " + bs.getBlock().getName() + " has no NBT");
-                cmdCtx.getSource().sendFeedback(message, true);
+                cmdCtx.getSource().sendFeedback(() -> message, true);
                 return 1;
             }
             NbtCompound nbt = te.toInitialChunkDataNbt();
             String nbtStr = nbt.toString();
             MutableText message = Text.literal("Block at " + bp + " is " + bs.getBlock().getName() + " with TE NBT:");
-            cmdCtx.getSource().sendFeedback(message, true);
-            cmdCtx.getSource().sendFeedback(Text.of(nbtStr), true);
+            cmdCtx.getSource().sendFeedback(() -> message, true);
+            cmdCtx.getSource().sendFeedback(() -> Text.of(nbtStr), true);
             return 1;
         }))).then(literal("tick").requires(cmdSrc -> cmdSrc.hasPermissionLevel(2)).then(literal("te")).then(argument("location", Vec3ArgumentType.vec3()).executes(cmdCtx -> {
             PosArgument loc = Vec3ArgumentType.getPosArgument(cmdCtx, "location");
@@ -71,7 +71,7 @@ public class DebugCommand {
             if (te != null && ConfigCommand.isTickableBe(te)) {
                 ((BlockEntityTickInvoker) te).tick();
                 MutableText message = Text.literal("Ticked " + te.getClass().getName() + " at " + bp);
-                cmdCtx.getSource().sendFeedback(message, true);
+                cmdCtx.getSource().sendFeedback(() -> message, true);
             } else {
                 MutableText message = Text.literal("No tickable TE at " + bp);
                 cmdCtx.getSource().sendError(message);
@@ -102,7 +102,7 @@ public class DebugCommand {
 
 
             MutableText message = Text.literal("Classpath Dumped to: " + base.toAbsolutePath().toString());
-            cmdCtx.getSource().sendFeedback(message, true);
+            cmdCtx.getSource().sendFeedback(() -> message, true);
             System.out.println(message);
             return 1;
         }))
