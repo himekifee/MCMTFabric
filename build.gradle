@@ -44,10 +44,6 @@ dependencies {
 
     include group: 'com.electronwill.night-config', name: 'toml', version: '3.6.6'
     include group: 'com.electronwill.night-config', name: 'core', version: '3.6.6'
-
-    implementation("com.github.LlamaLad7:MixinExtras:0.1.1")
-    annotationProcessor("com.github.LlamaLad7:MixinExtras:0.1.1")
-    include "com.github.LlamaLad7:MixinExtras:0.1.1"
 }
 
 processResources {

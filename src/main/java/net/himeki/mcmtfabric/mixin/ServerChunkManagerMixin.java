@@ -1,6 +1,5 @@
 package net.himeki.mcmtfabric.mixin;
 
-import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import com.mojang.datafixers.util.Either;
 import net.himeki.mcmtfabric.DebugHookTerminator;
 import net.himeki.mcmtfabric.ParallelProcessor;

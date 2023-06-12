@@ -1,6 +1,5 @@
 package net.himeki.mcmtfabric.syncfu;
 
-import com.llamalad7.mixinextras.MixinExtrasBootstrap;
 import net.fabricmc.loader.api.entrypoint.PreLaunchEntrypoint;
 import net.fabricmc.loader.impl.launch.FabricLauncherBase;
 import org.apache.logging.log4j.LogManager;
@@ -30,7 +29,6 @@ public class SyncFuTransformer implements PreLaunchEntrypoint {
             FabricLauncherBase.getLauncher().loadIntoTarget("it.unimi.dsi.fastutil.longs.Long2LongOpenHashMap$MapIterator");
 //            FabricLauncherBase..getLauncher().loadIntoTarget("it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap$FastEntryIterator");  Error, is a interface
 //            FabricLauncherBase..getLauncher().loadIntoTarget("it.unimi.dsi.fastutil.longs.Long2ObjectMap$FastEntrySet");
-            MixinExtrasBootstrap.init();
         } catch (ClassNotFoundException e) {
             e.printStackTrace();
         }
