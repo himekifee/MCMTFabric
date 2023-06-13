@@ -8,6 +8,6 @@ import net.minecraft.world.chunk.light.LevelPropagator;
 import net.minecraft.world.tick.ChunkTickScheduler;
 import org.spongepowered.asm.mixin.Mixin;
 
-@Mixin(value = {PathMinHeap.class, ChunkTickScheduler.class, LevelPropagator.class, EntityNavigation.class, ChunkStatus.class, LockHelper.class})
+@Mixin(value = {PathMinHeap.class, ChunkTickScheduler.class, LevelPropagator.class, EntityNavigation.class, LockHelper.class})
 public class SyncAllMixin {
 }
