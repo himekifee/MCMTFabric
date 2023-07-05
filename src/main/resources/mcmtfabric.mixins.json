@@ -15,6 +15,7 @@
     "ItemEntityMixin",
     "LevelPropagatorMixin",
     "MinecraftServerMixin",
+    "NearestLivingEntitiesSensorMixin",
     "PathNodeNavigatorMixin",
     "PendingUpdateQueueMixin",
     "SectionedEntityCacheMixin",

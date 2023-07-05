@@ -37,6 +37,7 @@ public class SynchronisePlugin implements IMixinConfigPlugin {
         mixin2MethodsMap.put("net.himeki.mcmtfabric.mixin.ServerChunkManagerMixin", mappingResolver.mapMethodName("intermediary", "net.minecraft.class_3215", "method_21738", "(JLnet/minecraft/class_2791;Lnet/minecraft/class_2806;)V"));
         mixin2MethodsMap.put("net.himeki.mcmtfabric.mixin.PathNodeNavigatorMixin", mappingResolver.mapMethodName("intermediary", "net.minecraft.class_13", "method_52", "(Lnet/minecraft/class_1950;Lnet/minecraft/class_1308;Ljava/util/Set;FIF)Lnet/minecraft/class_11;"));
 //        mixin2MethodsMap.put("net.himeki.mcmtfabric.mixin.ChunkStatusMixin", mappingResolver.mapMethodName("intermediary", "net.minecraft.class_2806", "method_20612", "(Lnet/minecraft/class_3218;Lnet/minecraft/class_3485;Lnet/minecraft/class_3227;Ljava/util/function/Function;Lnet/minecraft/class_2791;)Ljava/util/concurrent/CompletableFuture;"));
+        mixin2MethodsMap.put("net.himeki.mcmtfabric.mixin.NearestLivingEntitiesSensorMixin", mappingResolver.mapMethodName("intermediary", "net.minecraft.class_4148","method_19101", "(Lnet/minecraft/class_3218;Lnet/minecraft/class_1309;)V"));
         mixin2MethodsExcludeMap.put("net.himeki.mcmtfabric.mixin.SyncAllMixin", mappingResolver.mapMethodName("intermediary", "net.minecraft.class_2806", "method_12165", "(Lnet/minecraft/class_2806;)Z"));
 
 
