@@ -53,7 +53,7 @@ public class Int2ObjectConcurrentHashMap<V> implements Int2ObjectMap<V> {
     }
 
     @Override
-    public ObjectSet<Entry<V>> int2ObjectEntrySet() {
+    public ObjectSet<it.unimi.dsi.fastutil.ints.Int2ObjectMap.Entry<V>> int2ObjectEntrySet() {
         return FastUtilHackUtil.entrySetIntWrap(backing);
     }
 
