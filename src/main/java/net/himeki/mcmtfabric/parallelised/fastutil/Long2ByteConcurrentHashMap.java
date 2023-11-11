@@ -59,7 +59,7 @@ public class Long2ByteConcurrentHashMap implements Long2ByteMap {
     }
 
     @Override
-    public ObjectSet<Entry> long2ByteEntrySet() {
+    public ObjectSet<it.unimi.dsi.fastutil.longs.Long2ByteMap.Entry> long2ByteEntrySet() {
         return FastUtilHackUtil.entrySetLongByteWrap(backing);
     }
 

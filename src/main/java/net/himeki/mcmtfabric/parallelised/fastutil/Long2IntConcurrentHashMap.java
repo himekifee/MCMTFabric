@@ -46,7 +46,7 @@ public class Long2IntConcurrentHashMap implements Long2IntMap {
     }
 
     @Override
-    public ObjectSet<Entry> long2IntEntrySet() {
+    public ObjectSet<it.unimi.dsi.fastutil.longs.Long2IntMap.Entry> long2IntEntrySet() {
         return null;
     }
 

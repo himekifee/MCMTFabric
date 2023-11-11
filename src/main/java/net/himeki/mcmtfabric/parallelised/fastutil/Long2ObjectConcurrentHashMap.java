@@ -54,7 +54,7 @@ public class Long2ObjectConcurrentHashMap<V> implements Long2ObjectMap<V> {
     }
 
     @Override
-    public ObjectSet<Entry<V>> long2ObjectEntrySet() {
+    public ObjectSet<it.unimi.dsi.fastutil.longs.Long2ObjectMap.Entry<V>> long2ObjectEntrySet() {
         return FastUtilHackUtil.entrySetLongWrap(backing);
     }
 

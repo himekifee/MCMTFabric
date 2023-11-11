@@ -68,7 +68,7 @@ public class Long2LongConcurrentHashMap implements Long2LongMap {
     }
 
     @Override
-    public ObjectSet<Entry> long2LongEntrySet() {
+    public ObjectSet<it.unimi.dsi.fastutil.longs.Long2LongMap.Entry> long2LongEntrySet() {
         return FastUtilHackUtil.entrySetLongLongWrap(backing);
     }
 
